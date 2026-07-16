@@ -64,10 +64,17 @@ async function readLocalListings() {
 }
 
 async function writeLocalListings(listings: Listing[]) {
+  if (process.env.VERCEL) {
+    throw new Error("Vercel üzerinde kalıcı portföy deposu yapılandırılmadı.");
+  }
   await mkdir(path.dirname(localDataPath), { recursive: true });
   const temporary = `${localDataPath}.${randomUUID()}.tmp`;
   await writeFile(temporary, `${JSON.stringify(listings, null, 2)}\n`, "utf8");
   await rename(temporary, localDataPath);
+}
+
+export function getListingStorageMode() {
+  return githubConfig() ? "github" : process.env.VERCEL ? "unconfigured" : "local";
 }
 
 export async function getListings(options: { includeDrafts?: boolean } = {}) {

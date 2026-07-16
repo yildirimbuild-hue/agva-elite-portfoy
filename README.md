@@ -43,6 +43,7 @@ NEXT_PUBLIC_WHATSAPP_NUMBER=905XXXXXXXXX
 NEXT_PUBLIC_PHONE_NUMBER=+905XXXXXXXXX
 DEEPSEEK_API_KEY=your-deepseek-api-key
 DEEPSEEK_MODEL=deepseek-v4-flash
+BLOB_READ_WRITE_TOKEN=vercel-blob-read-write-token
 ```
 
 WhatsApp numarası yalnız rakamlardan ve ülke koduyla yazılmalıdır. API anahtarı
@@ -69,11 +70,10 @@ npm run build
 
 ## Görseller
 
-Admin paneli görselleri geliştirme ortamında `public/uploads/` klasörüne yazar.
-Her dosya en fazla 8 MB olabilir ve yalnız JPG, PNG veya WebP kabul edilir.
-
-Kalıcı sunucu diski olmayan üretim ortamlarında bir obje depolama sağlayıcısı
-eklenmelidir. Tarayıcı tarafına GitHub anahtarı veya depolama anahtarı konmaz.
+Admin paneli yerel geliştirmede görselleri `public/uploads/` klasörüne yazar.
+Vercel'de bağlı bir Blob mağazası olduğunda aynı rota görselleri otomatik olarak
+kalıcı Vercel Blob deposuna yükler. Her dosya en fazla 8 MB olabilir ve yalnız
+JPG, PNG veya WebP kabul edilir. Blob anahtarı tarayıcıya gönderilmez.
 
 ## GitHub veri adaptörü
 
@@ -88,12 +88,47 @@ yerine GitHub Contents API üzerinden okunur ve yazılır:
 GitHub anahtarı yalnız sunucuda tutulmalıdır. Admin oturumu HttpOnly ve SameSite
 çerezle korunur.
 
+Vercel üzerinde GitHub veri adaptörü zorunludur. Yerel JSON'a üretim ortamında
+yazma girişimi açık hata verir; başarılı görünerek veri kaybetmez. Veri deposu
+olarak ayrı, tercihen özel bir GitHub deposu kullanın ve başlangıçta bu projedeki
+`data/listings.json` dosyasını aynı yola kopyalayın. İnce kapsamlı token'a yalnız
+bu veri deposunda `Contents: Read and write` yetkisi verin.
+
 ## Yayın mimarisi
 
-Admin paneli ve API rotaları nedeniyle uygulama artık statik GitHub Pages sitesi
-değildir. Node.js destekleyen Vercel, Render, Railway veya benzeri bir platformda
-çalıştırılmalıdır. GitHub deposu kaynak kod ve isteğe bağlı portföy veri deposu
-olarak kullanılmaya devam eder.
+Admin paneli ve API rotaları nedeniyle uygulama statik GitHub Pages sitesi
+değildir. Vercel üzerinde Next.js projesi olarak dağıtılır.
+
+### Vercel dağıtım kontrol listesi
+
+1. GitHub deposunu Vercel'e içe aktarın; framework `Next.js`, proje kökü depo
+   kökü ve build komutu `npm run build` olarak kalabilir.
+2. Vercel Storage bölümünde herkese açık bir Blob mağazası oluşturup projeye
+   bağlayın. `BLOB_READ_WRITE_TOKEN` otomatik eklenir.
+3. Aşağıdaki değişkenleri hem `Preview` hem `Production` ortamlarına ekleyin:
+   - `ADMIN_PASSWORD`
+   - `ADMIN_SESSION_SECRET`
+   - `DEEPSEEK_API_KEY`
+   - `DEEPSEEK_MODEL=deepseek-v4-flash`
+   - `NEXT_PUBLIC_WHATSAPP_NUMBER`
+   - `NEXT_PUBLIC_PHONE_NUMBER`
+   - `GITHUB_TOKEN`
+   - `GITHUB_DATA_REPOSITORY`
+   - `GITHUB_DATA_BRANCH`
+   - `GITHUB_DATA_PATH`
+4. Dağıtımdan sonra `/api/health` adresini açın. Tüm servisler hazırsa HTTP 200
+   ve `status: ready` döner.
+5. Admin panelinden bir taslak ilan ve bir test görseli ekleyin; yeni dağıtım
+   başlattıktan sonra ikisinin de kaldığını doğrulayın.
+
+Vercel gerçek alan adı olmadan otomatik bir `*.vercel.app` HTTPS adresi verir.
+Uygulamadaki bağlantılar göreli, oturum çerezi origin tabanlı olduğu için geçici
+Vercel alan adında ek kod değişikliği gerekmez. Daha sonra özel alan adı aynı
+projeye bağlanabilir.
+
+Vercel build sırasında `scripts/check-deployment.mjs` çalışır. Zorunlu bir ortam
+değişkeni eksik veya zayıfsa bozuk bir dağıtım üretmek yerine anlaşılır hata ile
+build'i durdurur. Yerel geliştirmede bu zorunluluk uygulanmaz.
 
 ## Kaynaklar
 

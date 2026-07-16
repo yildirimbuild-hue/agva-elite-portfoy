@@ -14,7 +14,13 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
   if (nextOldPrice > 0 && nextOldPrice <= nextPrice) {
     return NextResponse.json({ error: "Eski fiyat yeni fiyattan yüksek olmalıdır." }, { status: 400 });
   }
-  const updated = await updateListing(id, input);
+  let updated: Awaited<ReturnType<typeof updateListing>>;
+  try {
+    updated = await updateListing(id, input);
+  } catch (error) {
+    console.error("Listing update failed", error);
+    return NextResponse.json({ error: "Portföy veri deposuna yazılamadı. Dağıtım ayarlarını kontrol edin." }, { status: 503 });
+  }
   if (!updated) return NextResponse.json({ error: "İlan bulunamadı." }, { status: 404 });
   return NextResponse.json(updated);
 }
@@ -22,6 +28,11 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
 export async function DELETE(_request: Request, context: { params: Promise<{ id: string }> }) {
   if (!(await isAdminAuthenticated())) return NextResponse.json({ error: "Yetkisiz." }, { status: 401 });
   const { id } = await context.params;
-  if (!(await deleteListing(id))) return NextResponse.json({ error: "İlan bulunamadı." }, { status: 404 });
+  try {
+    if (!(await deleteListing(id))) return NextResponse.json({ error: "İlan bulunamadı." }, { status: 404 });
+  } catch (error) {
+    console.error("Listing delete failed", error);
+    return NextResponse.json({ error: "Portföy veri deposuna yazılamadı. Dağıtım ayarlarını kontrol edin." }, { status: 503 });
+  }
   return NextResponse.json({ ok: true });
 }

@@ -19,5 +19,10 @@ export async function POST(request: Request) {
   if (input.oldPrice > 0 && input.oldPrice <= input.price) {
     return NextResponse.json({ error: "Eski fiyat yeni fiyattan yüksek olmalıdır." }, { status: 400 });
   }
-  return NextResponse.json(await createListing(input), { status: 201 });
+  try {
+    return NextResponse.json(await createListing(input), { status: 201 });
+  } catch (error) {
+    console.error("Listing create failed", error);
+    return NextResponse.json({ error: "Portföy veri deposuna yazılamadı. Dağıtım ayarlarını kontrol edin." }, { status: 503 });
+  }
 }
