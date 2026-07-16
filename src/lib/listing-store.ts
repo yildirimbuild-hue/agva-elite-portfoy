@@ -84,6 +84,11 @@ export async function getListings(options: { includeDrafts?: boolean } = {}) {
   return visible.sort((a, b) => Number(b.featured) - Number(a.featured) || b.updatedAt.localeCompare(a.updatedAt));
 }
 
+export async function getListingBySlug(slug: string) {
+  const listings = await getListings();
+  return listings.find((listing) => listing.slug === slug) ?? null;
+}
+
 export async function saveListings(listings: Listing[]) {
   const config = githubConfig();
   if (config) return writeGithubListings(config, listings);

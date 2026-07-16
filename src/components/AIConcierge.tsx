@@ -2,7 +2,8 @@
 
 import { FormEvent, useState } from "react";
 
-type Message = { role: "user" | "assistant"; content: string };
+type ListingAction = { type: "open_listing"; reference: string; title: string; href: string };
+type Message = { role: "user" | "assistant"; content: string; actions?: ListingAction[] };
 
 const suggestions = [
   "Nehir kenarında villa arıyorum",
@@ -38,7 +39,11 @@ export function AIConcierge() {
           : payload.error ?? "Danışmana ulaşılamadı.");
         return;
       }
-      setMessages((current) => [...current, { role: "assistant", content: payload.answer }]);
+      const answer = { role: "assistant" as const, content: payload.answer, actions: payload.actions as ListingAction[] | undefined };
+      setMessages((current) => [...current, answer]);
+      if (payload.autoOpen && payload.actions?.[0]?.href) {
+        window.location.assign(payload.actions[0].href);
+      }
     } catch {
       setError("Bağlantı kurulamadı. Lütfen tekrar deneyin.");
     } finally {
@@ -62,7 +67,12 @@ export function AIConcierge() {
           </header>
           <div className="ai-messages" aria-live="polite">
             <div className="ai-message assistant">Merhaba. Bütçenizi, aradığınız bölgeyi veya emlak tipini yazın; güncel portföyden uygun seçenekleri bulayım.</div>
-            {messages.map((message, index) => <div className={`ai-message ${message.role}`} key={`${message.role}-${index}`}>{message.content}</div>)}
+            {messages.map((message, index) => (
+              <div className={`ai-message ${message.role}`} key={`${message.role}-${index}`}>
+                {message.content}
+                {message.actions && message.actions.length > 0 && <div className="ai-listing-actions">{message.actions.map((action) => <a href={action.href} key={action.reference}><span>{action.reference}</span><strong>{action.title}</strong><em>İlanı aç →</em></a>)}</div>}
+              </div>
+            ))}
             {loading && <div className="ai-message assistant typing"><i /><i /><i /></div>}
             {error && <div className="ai-error">{error}</div>}
           </div>

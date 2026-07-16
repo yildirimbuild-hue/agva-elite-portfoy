@@ -10,6 +10,7 @@ ticari portföyleri yöneten tam kapsamlı emlak uygulaması.
 - İlan detay sunumu ve mobil uyumlu katalog
 - İlan bazlı hazır mesajla WhatsApp geçişi ve telefonla arama
 - Canlı portföyü ve firma profilini okuyan DeepSeek yapay zekâ danışmanı
+- Kalıcı `/ilan/...` detay sayfaları ve AI komutuyla otomatik ilan yönlendirmesi
 - Yönetilebilir “Çok acil” ve eski/yeni fiyat etiketleri
 - Şifreli admin oturumu
 - İlan ekleme, düzenleme, yayın/taslak değiştirme ve silme

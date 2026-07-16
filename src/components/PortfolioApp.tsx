@@ -32,7 +32,6 @@ export default function PortfolioApp({ listings, company }: { listings: Listing[
   const [location, setLocation] = useState("Tümü");
   const [sort, setSort] = useState("featured");
   const [visible, setVisible] = useState(12);
-  const [selected, setSelected] = useState<Listing | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const locations = useMemo(() => [...new Set(listings.map((item) => item.location))].sort(), [listings]);
@@ -55,17 +54,6 @@ export default function PortfolioApp({ listings, company }: { listings: Listing[
   }, [listings, location, propertyType, purpose, query, sort]);
 
   useEffect(() => setVisible(12), [query, purpose, propertyType, location, sort]);
-
-  useEffect(() => {
-    if (!selected) return;
-    const onKey = (event: KeyboardEvent) => event.key === "Escape" && setSelected(null);
-    document.body.classList.add("modal-open");
-    window.addEventListener("keydown", onKey);
-    return () => {
-      document.body.classList.remove("modal-open");
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [selected]);
 
   const selectPurpose = (value: string) => {
     setPurpose(value);
@@ -199,7 +187,7 @@ export default function PortfolioApp({ listings, company }: { listings: Listing[
             <div className="property-grid">
               {filtered.slice(0, visible).map((listing) => (
                 <article className="property-card" key={listing.id}>
-                  <button className="property-hit" type="button" onClick={() => setSelected(listing)} aria-label={`${listing.title} detayını aç`} />
+                  <a className="property-hit" href={`/ilan/${listing.slug}`} aria-label={`${listing.title} detayını aç`} />
                   <div className="property-image">
                     <img src={listing.images[0] || "/images/forest-house.webp"} alt={listing.title} />
                     <div className="property-badges">
@@ -248,38 +236,6 @@ export default function PortfolioApp({ listings, company }: { listings: Listing[
         <div><a href="#portfoy">Tüm ilanlar</a><a href="/admin">Admin paneli</a><a href="#top">Yukarı dön ↑</a></div>
       </footer>
 
-      {selected && (
-        <div className="property-modal" role="dialog" aria-modal="true" aria-labelledby="property-modal-title">
-          <button className="property-modal-backdrop" type="button" onClick={() => setSelected(null)} aria-label="Kapat" />
-          <div className="property-modal-panel">
-            <button className="modal-close" type="button" onClick={() => setSelected(null)} aria-label="Kapat">×</button>
-            <div className="property-modal-image"><img src={selected.images[0]} alt={selected.title} /></div>
-            <div className="property-modal-content">
-              <div className="property-meta"><span>{selected.purpose} · {selected.propertyType}</span><span>{selected.reference}</span></div>
-              <h2 id="property-modal-title">{selected.title}</h2>
-              <p className="property-location">{selected.location} · {selected.district}</p>
-              <div className="modal-price-wrap">
-                {selected.oldPrice > selected.price && <del>{formatMoney(selected.oldPrice, selected.currency)}</del>}
-                <strong className="modal-price">{formatPrice(selected)}</strong>
-                {discountPercent(selected) > 0 && <span>%{discountPercent(selected)} fiyat avantajı</span>}
-              </div>
-              <div className="modal-spec-grid">
-                <div><span>Oda</span><strong>{selected.rooms}</strong></div>
-                <div><span>Brüt alan</span><strong>{selected.grossArea || "—"} m²</strong></div>
-                <div><span>Arsa</span><strong>{selected.landArea || "—"} m²</strong></div>
-                <div><span>Banyo</span><strong>{selected.bathrooms || "—"}</strong></div>
-              </div>
-              <p className="modal-description">{selected.description}</p>
-              <div className="modal-features">{selected.features.map((item) => <span key={item}>✓ {item}</span>)}</div>
-              <div className="modal-contact-actions">
-                {whatsappDigits ? <a className="whatsapp-action" href={whatsappHref(selected)} target="_blank" rel="noreferrer">WhatsApp’tan bilgi al</a> : <button className="whatsapp-action" type="button" onClick={contactMissing}>WhatsApp’tan bilgi al</button>}
-                {phoneNumber ? <a className="call-action" href={`tel:${phoneNumber}`}>Danışmanı ara</a> : <button className="call-action" type="button" onClick={contactMissing}>Danışmanı ara</button>}
-              </div>
-              {selected.isDemo && <div className="modal-demo-warning">Bu kayıt sistem gösterimi için oluşturulmuş örnek ilandır.</div>}
-            </div>
-          </div>
-        </div>
-      )}
       <div className="contact-dock" aria-label="Hızlı iletişim">
         {whatsappDigits ? <a className="dock-whatsapp" href={whatsappHref()} target="_blank" rel="noreferrer"><span>WA</span><strong>Mesaj yaz</strong></a> : <button className="dock-whatsapp" type="button" onClick={contactMissing}><span>WA</span><strong>Mesaj yaz</strong></button>}
         {phoneNumber ? <a className="dock-call" href={`tel:${phoneNumber}`}><span>☎</span><strong>Ara</strong></a> : <button className="dock-call" type="button" onClick={contactMissing}><span>☎</span><strong>Ara</strong></button>}

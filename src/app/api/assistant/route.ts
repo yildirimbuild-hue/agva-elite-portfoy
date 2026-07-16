@@ -5,6 +5,7 @@ import { getListings } from "@/lib/listing-store";
 export const dynamic = "force-dynamic";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
+type ListingAction = { type: "open_listing"; reference: string; title: string; href: string };
 const rateLimit = new Map<string, { count: number; resetAt: number }>();
 
 function isRateLimited(request: Request) {
@@ -26,18 +27,46 @@ function isMessage(value: unknown): value is ChatMessage {
     typeof message.content === "string" && message.content.trim().length > 0 && message.content.length <= 1200;
 }
 
+function normalize(value: string) {
+  return value.toLocaleLowerCase("tr-TR").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ı/g, "i");
+}
+
+function wantsToOpen(question: string) {
+  const text = normalize(question);
+  return ["ac", "goster", "getir", "incele", "sayfasina git", "sayfasini"].some((term) => text.includes(term));
+}
+
+function toAction(listing: Awaited<ReturnType<typeof getListings>>[number]): ListingAction {
+  return { type: "open_listing", reference: listing.reference, title: listing.title, href: `/ilan/${listing.slug}` };
+}
+
+function resolveDirectListing(question: string, listings: Awaited<ReturnType<typeof getListings>>) {
+  if (!wantsToOpen(question)) return null;
+  const text = normalize(question);
+  const reference = question.match(/IKS-?\d{4}/i)?.[0]?.toUpperCase().replace("IKS", "IKS-").replace("--", "-");
+  if (reference) {
+    const matched = listings.find((listing) => listing.reference === reference);
+    if (matched) return matched;
+  }
+  if (text.includes("en pahali")) return [...listings].sort((a, b) => b.price - a.price)[0] ?? null;
+  if (text.includes("en ucuz")) return [...listings].sort((a, b) => a.price - b.price)[0] ?? null;
+  const titleMatch = listings.find((listing) => text.includes(normalize(listing.title)));
+  return titleMatch ?? null;
+}
+
+function actionsFromAnswer(answer: string, listings: Awaited<ReturnType<typeof getListings>>) {
+  const references = [...new Set(answer.match(/IKS-\d{4}/gi)?.map((item) => item.toUpperCase()) ?? [])];
+  return references
+    .map((reference) => listings.find((listing) => listing.reference === reference))
+    .filter((listing): listing is NonNullable<typeof listing> => Boolean(listing))
+    .slice(0, 3)
+    .map(toAction);
+}
+
 export async function POST(request: Request) {
   if (isRateLimited(request)) {
     return NextResponse.json({ error: "Çok fazla istek gönderildi. Lütfen kısa süre sonra tekrar deneyin." }, { status: 429 });
   }
-  const apiKey = process.env.DEEPSEEK_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: "DeepSeek API anahtarı henüz yapılandırılmadı.", setupRequired: true },
-      { status: 503 },
-    );
-  }
-
   const body = (await request.json().catch(() => null)) as { messages?: unknown } | null;
   if (!body || !Array.isArray(body.messages)) {
     return NextResponse.json({ error: "Geçerli bir mesaj gönderin." }, { status: 400 });
@@ -49,6 +78,23 @@ export async function POST(request: Request) {
   }
 
   const [company, listings] = await Promise.all([getCompanyProfile(), getListings()]);
+  const latestQuestion = messages[messages.length - 1].content;
+  const directListing = resolveDirectListing(latestQuestion, listings);
+  if (directListing) {
+    return NextResponse.json({
+      answer: `${directListing.reference} · ${directListing.title} açılıyor.`,
+      actions: [toAction(directListing)],
+      autoOpen: true,
+    });
+  }
+
+  const apiKey = process.env.DEEPSEEK_API_KEY;
+  if (!apiKey) {
+    return NextResponse.json(
+      { error: "DeepSeek API anahtarı henüz yapılandırılmadı.", setupRequired: true },
+      { status: 503 },
+    );
+  }
   const inventory = listings.map((listing) => ({
     reference: listing.reference,
     title: listing.title,
@@ -117,7 +163,8 @@ KURALLAR:
 
     const answer = payload?.choices?.[0]?.message?.content?.trim();
     if (!answer) return NextResponse.json({ error: "Yapay zekâ boş yanıt verdi." }, { status: 502 });
-    return NextResponse.json({ answer });
+    const actions = actionsFromAnswer(answer, listings);
+    return NextResponse.json({ answer, actions, autoOpen: wantsToOpen(latestQuestion) && actions.length === 1 });
   } catch (error) {
     console.error("DeepSeek request failed", error);
     return NextResponse.json({ error: "Yapay zekâ danışmanı zaman aşımına uğradı." }, { status: 504 });
