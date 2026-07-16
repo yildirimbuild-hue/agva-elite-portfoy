@@ -950,7 +950,7 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
             {messages.map((message, index) => (
               <div className={`ai-message ${message.role}`} key={`${message.role}-${index}`}>
                 {message.content}
-                {message.role === "assistant" && message.voiceToken && voiceConfig.ready && <button className="ai-listen-message" type="button" onClick={() => void playVoice(message.content, message.voiceToken!)}>{speaking ? "■ Durdur" : "▶ Dinle"}</button>}
+                {message.role === "assistant" && message.voiceToken && voiceConfig.ready && <button className="ai-listen-message" type="button" onClick={speaking ? stopAudio : () => void playVoice(message.content, message.voiceToken!)}>{speaking ? "■ Durdur" : "▶ Dinle"}</button>}
                 {message.actions && message.actions.length > 0 && <div className="ai-listing-actions">{message.actions.map((action) => <a href={action.href} key={action.reference}><span>{action.reference}</span><strong>{action.title}</strong><em>İlanı aç →</em></a>)}</div>}
                 {message.adminDraft && <div className="ai-admin-draft">
                   <div className="ai-admin-draft-title"><span>{message.adminDraftKind === "edit" ? `${editingTarget?.reference ?? "İLAN"} · DEĞİŞİKLİK TASLAĞI` : "YENİ İLAN TASLAĞI"}</span><strong>{message.adminDraft.title}</strong></div>
