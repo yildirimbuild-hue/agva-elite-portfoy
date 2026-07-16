@@ -100,7 +100,7 @@ export function ListingDetail({ listing, company }: { listing: Listing; company:
         <p>{company.description}</p>
         <div><a href="/">Tüm ilanlar</a><a href="/admin">Admin paneli</a></div>
       </footer>
-      <AIConcierge listing={listing} />
+      {company.aiEnabled && <AIConcierge listing={listing} />}
     </>
   );
 }

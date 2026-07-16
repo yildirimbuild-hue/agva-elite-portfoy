@@ -39,6 +39,18 @@ export type CompanyProfile = {
   workingHours: string;
   whatsappNumber: string;
   phoneNumber: string;
+  aiEnabled: boolean;
+};
+
+export type AdminSiteSettings = {
+  aiEnabled: boolean;
+  aiModel: string;
+  assistantInstructions: string;
+  whatsappNumber: string;
+  phoneNumber: string;
+  hasApiKey: boolean;
+  apiKeySource: "managed" | "environment" | "none";
+  updatedAt: string | null;
 };
 
 export type ListingInput = Omit<Listing, "id" | "reference" | "slug" | "createdAt" | "updatedAt"> & {

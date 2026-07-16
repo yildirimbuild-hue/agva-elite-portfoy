@@ -1,14 +1,19 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import type { CompanyProfile } from "./types";
+import { getRuntimeSiteSettings } from "./site-settings-store";
 
 const companyDataPath = path.join(process.cwd(), "data", "company.json");
 
 export async function getCompanyProfile(): Promise<CompanyProfile> {
-  const profile = JSON.parse(await readFile(companyDataPath, "utf8")) as CompanyProfile;
+  const [profile, settings] = await Promise.all([
+    readFile(companyDataPath, "utf8").then((value) => JSON.parse(value) as CompanyProfile),
+    getRuntimeSiteSettings(),
+  ]);
   return {
     ...profile,
-    whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? profile.whatsappNumber,
-    phoneNumber: process.env.NEXT_PUBLIC_PHONE_NUMBER ?? profile.phoneNumber,
+    whatsappNumber: settings.whatsappNumber,
+    phoneNumber: settings.phoneNumber,
+    aiEnabled: settings.aiEnabled,
   };
 }

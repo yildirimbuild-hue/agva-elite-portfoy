@@ -2,7 +2,7 @@
 
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Listing, ListingInput, ListingPurpose, PropertyType } from "@/lib/types";
+import type { AdminSiteSettings, Listing, ListingInput, ListingPurpose, PropertyType } from "@/lib/types";
 
 const emptyForm: ListingInput = {
   title: "",
@@ -30,9 +30,14 @@ const emptyForm: ListingInput = {
 
 const formatPrice = (listing: Listing) => new Intl.NumberFormat("tr-TR", { style: "currency", currency: listing.currency, maximumFractionDigits: 0 }).format(listing.price);
 
-export function AdminPanel({ initialListings }: { initialListings: Listing[] }) {
+export function AdminPanel({ initialListings, initialSettings }: { initialListings: Listing[]; initialSettings: AdminSiteSettings }) {
   const router = useRouter();
+  const [view, setView] = useState<"listings" | "settings">("listings");
   const [listings, setListings] = useState(initialListings);
+  const [settings, setSettings] = useState(initialSettings);
+  const [apiKey, setApiKey] = useState("");
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [settingsMessage, setSettingsMessage] = useState("");
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("Tümü");
   const [editorOpen, setEditorOpen] = useState(false);
@@ -160,15 +165,81 @@ export function AdminPanel({ initialListings }: { initialListings: Listing[] }) 
     router.refresh();
   }
 
+  async function saveSettings(event: FormEvent) {
+    event.preventDefault();
+    setSettingsSaving(true);
+    setSettingsMessage("");
+    try {
+      const response = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          aiEnabled: settings.aiEnabled,
+          aiModel: settings.aiModel,
+          assistantInstructions: settings.assistantInstructions,
+          whatsappNumber: settings.whatsappNumber,
+          phoneNumber: settings.phoneNumber,
+          ...(apiKey.trim() ? { apiKey: apiKey.trim() } : {}),
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? "Ayarlar kaydedilemedi.");
+      setSettings(payload);
+      setApiKey("");
+      setSettingsMessage("Site ve yapay zekâ ayarları kaydedildi.");
+      router.refresh();
+    } catch (error) {
+      setSettingsMessage(error instanceof Error ? error.message : "Ayarlar kaydedilemedi.");
+    } finally {
+      setSettingsSaving(false);
+    }
+  }
+
+  async function testDeepSeek() {
+    setSettingsSaving(true);
+    setSettingsMessage("DeepSeek bağlantısı test ediliyor...");
+    try {
+      const response = await fetch("/api/admin/settings/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ aiModel: settings.aiModel, ...(apiKey.trim() ? { apiKey: apiKey.trim() } : {}) }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? "Bağlantı testi başarısız.");
+      setSettingsMessage(`DeepSeek bağlantısı başarılı · ${payload.model} · ${payload.latencyMs} ms`);
+    } catch (error) {
+      setSettingsMessage(error instanceof Error ? error.message : "Bağlantı testi başarısız.");
+    } finally {
+      setSettingsSaving(false);
+    }
+  }
+
+  async function clearManagedApiKey() {
+    if (!window.confirm("Admin panelinden kaydedilmiş DeepSeek anahtarı kaldırılsın mı? Ortam değişkenindeki anahtar varsa tekrar o kullanılır.")) return;
+    setSettingsSaving(true);
+    try {
+      const response = await fetch("/api/admin/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ clearApiKey: true }) });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? "API anahtarı kaldırılamadı.");
+      setSettings(payload);
+      setApiKey("");
+      setSettingsMessage("Yönetilen API anahtarı kaldırıldı.");
+    } catch (error) {
+      setSettingsMessage(error instanceof Error ? error.message : "API anahtarı kaldırılamadı.");
+    } finally {
+      setSettingsSaving(false);
+    }
+  }
+
   return (
     <main className="admin-shell">
       <aside className="admin-sidebar">
         <a className="admin-brand" href="/"><span>İK</span><div><strong>İKİSU</strong><small>EMLAK YÖNETİMİ</small></div></a>
-        <nav><button className="active" type="button">▦ Portföy</button><a href="/" target="_blank">↗ Siteyi görüntüle</a></nav>
+        <nav><button className={view === "listings" ? "active" : ""} type="button" onClick={() => { setView("listings"); setEditorOpen(false); }}>▦ Portföy</button><button className={view === "settings" ? "active" : ""} type="button" onClick={() => { setView("settings"); setEditorOpen(false); }}>⚙ Site ve AI ayarları</button><a href="/" target="_blank" rel="noreferrer">↗ Siteyi görüntüle</a></nav>
         <div className="admin-sidebar-foot"><button type="button" onClick={logout}>Oturumu kapat</button></div>
       </aside>
 
-      <section className="admin-main">
+      <section className={`admin-main ${view !== "listings" ? "admin-view-hidden" : ""}`}>
         <header className="admin-topbar"><div><span>PORTFÖY YÖNETİMİ</span><h1>İlanlar</h1></div><button className="admin-primary" type="button" onClick={openNew}>+ Yeni ilan ekle</button></header>
         {message && <div className="admin-message">{message}<button type="button" onClick={() => setMessage("")}>×</button></div>}
 
@@ -202,7 +273,35 @@ export function AdminPanel({ initialListings }: { initialListings: Listing[] }) 
         </div>
       </section>
 
-      {editorOpen && (
+      {view === "settings" && <section className="admin-main admin-settings-page">
+        <header className="admin-topbar"><div><span>SİTE VE ENTEGRASYONLAR</span><h1>Ayarlar</h1></div><a className="admin-primary" href="/" target="_blank" rel="noreferrer">Siteyi kontrol et</a></header>
+        {settingsMessage && <div className="admin-message">{settingsMessage}<button type="button" onClick={() => setSettingsMessage("")}>×</button></div>}
+        <form className="admin-settings-form" onSubmit={saveSettings}>
+          <section className="admin-settings-card">
+            <header><div><span>YAPAY ZEKÂ</span><h2>DeepSeek kontrolü</h2></div><strong className={settings.aiEnabled ? "settings-status on" : "settings-status"}>{settings.aiEnabled ? "Aktif" : "Kapalı"}</strong></header>
+            <p>API anahtarı sunucuda AES-256-GCM ile şifrelenir ve hiçbir zaman tarayıcıya geri gönderilmez.</p>
+            <div className="admin-settings-grid">
+              <label className="check-field span-2"><input type="checkbox" checked={settings.aiEnabled} onChange={(event) => setSettings((current) => ({ ...current, aiEnabled: event.target.checked }))} /><span>Yapay zekâ danışmanını aktif tut</span></label>
+              <label><span>DeepSeek modeli</span><input value={settings.aiModel} onChange={(event) => setSettings((current) => ({ ...current, aiModel: event.target.value }))} placeholder="deepseek-v4-flash" /></label>
+              <label><span>Yeni API anahtarı</span><input type="password" autoComplete="new-password" value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder={settings.hasApiKey ? `Anahtar mevcut · ${settings.apiKeySource === "managed" ? "admin ayarı" : "ortam değişkeni"}` : "sk-..."} /></label>
+              <label className="span-2"><span>AI davranış talimatı</span><textarea rows={5} maxLength={1500} value={settings.assistantInstructions} onChange={(event) => setSettings((current) => ({ ...current, assistantInstructions: event.target.value }))} placeholder="Örneğin: Önce bütçe ve bölgeyi sor; yanıtları kısa tut." /><small>{settings.assistantInstructions.length}/1500 · Güvenlik ve doğruluk kuralları değiştirilemez.</small></label>
+            </div>
+            <div className="admin-settings-actions"><button type="button" disabled={settingsSaving} onClick={() => void testDeepSeek()}>Bağlantıyı test et</button>{settings.apiKeySource === "managed" && <button className="danger" type="button" disabled={settingsSaving} onClick={() => void clearManagedApiKey()}>Yönetilen anahtarı kaldır</button>}</div>
+          </section>
+
+          <section className="admin-settings-card">
+            <header><div><span>İLETİŞİM</span><h2>WhatsApp ve arama</h2></div></header>
+            <p>Numaraları ülke koduyla yalnız rakam olarak girin. Alanı boş bırakırsanız ilgili buton güvenli biçimde pasif kalır.</p>
+            <div className="admin-settings-grid">
+              <label><span>WhatsApp numarası</span><input inputMode="tel" value={settings.whatsappNumber} onChange={(event) => setSettings((current) => ({ ...current, whatsappNumber: event.target.value }))} placeholder="905551112233" /></label>
+              <label><span>Arama numarası</span><input inputMode="tel" value={settings.phoneNumber} onChange={(event) => setSettings((current) => ({ ...current, phoneNumber: event.target.value }))} placeholder="905551112233" /></label>
+            </div>
+          </section>
+          <footer className="admin-settings-save"><span>Son güncelleme: {settings.updatedAt ? new Date(settings.updatedAt).toLocaleString("tr-TR") : "Henüz kaydedilmedi"}</span><button className="admin-primary" type="submit" disabled={settingsSaving}>{settingsSaving ? "İşleniyor..." : "Tüm ayarları kaydet"}</button></footer>
+        </form>
+      </section>}
+
+      {view === "listings" && editorOpen && (
         <div className="admin-editor" role="dialog" aria-modal="true" aria-label={editingId ? "İlan düzenle" : "Yeni ilan ekle"}>
           <button className="admin-editor-backdrop" type="button" onClick={() => setEditorOpen(false)} aria-label="Kapat" />
           <form className="admin-editor-panel" onSubmit={save}>

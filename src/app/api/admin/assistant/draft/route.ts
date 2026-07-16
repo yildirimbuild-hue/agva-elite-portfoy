@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
+import { getRuntimeSiteSettings } from "@/lib/site-settings-store";
 import type { ListingInput, ListingPurpose, PropertyType } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -87,7 +88,9 @@ export async function POST(request: Request) {
   const instruction = text(body?.instruction, 3000);
   if (!instruction) return NextResponse.json({ error: "İlan bilgisi gönderin." }, { status: 400 });
 
-  const apiKey = process.env.DEEPSEEK_API_KEY;
+  const settings = await getRuntimeSiteSettings();
+  if (!settings.aiEnabled) return NextResponse.json({ error: "Yapay zekâ yönetici tarafından kapatıldı." }, { status: 503 });
+  const apiKey = settings.apiKey;
   if (!apiKey) return NextResponse.json({ error: "DeepSeek API anahtarı yapılandırılmadı." }, { status: 503 });
 
   const currentDraft = { ...optionalDefaults, ...sanitize(body?.draft) };
@@ -103,7 +106,7 @@ Yalnız tek bir geçerli JSON nesnesi döndür; açıklama veya markdown yazma.`
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: process.env.DEEPSEEK_MODEL ?? "deepseek-v4-flash",
+        model: settings.aiModel,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: JSON.stringify({ currentDraft, instruction }) },

@@ -242,7 +242,7 @@ export default function PortfolioApp({ listings, company }: { listings: Listing[
         {whatsappDigits ? <a className="dock-whatsapp" href={whatsappHref()} target="_blank" rel="noreferrer"><span>WA</span><strong>Mesaj yaz</strong></a> : <button className="dock-whatsapp" type="button" onClick={contactMissing}><span>WA</span><strong>Mesaj yaz</strong></button>}
         {phoneNumber ? <a className="dock-call" href={`tel:${phoneNumber}`}><span>☎</span><strong>Ara</strong></a> : <button className="dock-call" type="button" onClick={contactMissing}><span>☎</span><strong>Ara</strong></button>}
       </div>
-      <AIConcierge />
+      {company.aiEnabled && <AIConcierge />}
     </>
   );
 }
