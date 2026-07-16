@@ -33,25 +33,80 @@ function normalize(value: string) {
 
 function wantsToOpen(question: string) {
   const text = normalize(question);
-  return ["ac", "goster", "getir", "incele", "sayfasina git", "sayfasini"].some((term) => text.includes(term));
+  return ["ac", "goster", "getir", "gotur", "incele", "sayfasina git", "sayfasini"].some((term) => text.includes(term));
 }
 
 function toAction(listing: Awaited<ReturnType<typeof getListings>>[number]): ListingAction {
   return { type: "open_listing", reference: listing.reference, title: listing.title, href: `/ilan/${listing.slug}` };
 }
 
-function resolveDirectListing(question: string, listings: Awaited<ReturnType<typeof getListings>>) {
-  if (!wantsToOpen(question)) return null;
+const ignoredTokens = new Set([
+  "ac", "goster", "getir", "gotur", "incele", "git", "bak", "bakalim",
+  "ilan", "ilani", "ilanini", "portfoy", "portfoyu", "sayfa", "sayfasi", "sayfasina",
+  "bana", "bir", "bu", "olan", "var", "mi", "hemen", "direkt", "dogrudan",
+  "istiyorum", "ariyorum", "ariyoruz", "aradigim", "olsun", "gibi", "icin", "uygun",
+  "hakkinda", "bilgi", "ver", "lutfen", "kenarinda", "kenari", "yakininda", "yakin",
+]);
+
+function tokens(value: string) {
+  return normalize(value).replace(/[^a-z0-9+]+/g, " ").trim().split(/\s+/).filter((token) => token && !ignoredTokens.has(token));
+}
+
+function editDistance(a: string, b: string) {
+  const row = Array.from({ length: b.length + 1 }, (_, index) => index);
+  for (let i = 1; i <= a.length; i += 1) {
+    let diagonal = row[0];
+    row[0] = i;
+    for (let j = 1; j <= b.length; j += 1) {
+      const previous = row[j];
+      row[j] = Math.min(row[j] + 1, row[j - 1] + 1, diagonal + Number(a[i - 1] !== b[j - 1]));
+      diagonal = previous;
+    }
+  }
+  return row[b.length];
+}
+
+function tokenScore(queryToken: string, listingTokens: string[]) {
+  if (listingTokens.some((item) => item === queryToken || item.includes(queryToken) || queryToken.includes(item))) return 2;
+  const fuzzyDistance = queryToken.length >= 7 ? 2 : 1;
+  if (queryToken.length >= 5 && listingTokens.some((item) => Math.abs(item.length - queryToken.length) <= fuzzyDistance && editDistance(item, queryToken) <= fuzzyDistance)) return 1;
+  return 0;
+}
+
+function resolvePortfolioMatches(question: string, listings: Awaited<ReturnType<typeof getListings>>) {
   const text = normalize(question);
   const reference = question.match(/IKS-?\d{4}/i)?.[0]?.toUpperCase().replace("IKS", "IKS-").replace("--", "-");
   if (reference) {
     const matched = listings.find((listing) => listing.reference === reference);
-    if (matched) return matched;
+    if (matched) return { listings: [matched], autoOpen: true };
   }
-  if (text.includes("en pahali")) return [...listings].sort((a, b) => b.price - a.price)[0] ?? null;
-  if (text.includes("en ucuz")) return [...listings].sort((a, b) => a.price - b.price)[0] ?? null;
-  const titleMatch = listings.find((listing) => text.includes(normalize(listing.title)));
-  return titleMatch ?? null;
+  if (["en pahali", "fiyati en yuksek", "en yuksek fiyat"].some((term) => text.includes(term))) {
+    const urgentOnly = text.includes("acil") ? listings.filter((listing) => listing.urgent) : listings;
+    const matched = [...urgentOnly].sort((a, b) => b.price - a.price)[0];
+    return matched ? { listings: [matched], autoOpen: true } : null;
+  }
+  if (["en ucuz", "fiyati en dusuk", "en dusuk fiyat"].some((term) => text.includes(term))) {
+    const matched = [...listings].sort((a, b) => a.price - b.price)[0];
+    return matched ? { listings: [matched], autoOpen: true } : null;
+  }
+
+  const queryTokens = tokens(question);
+  if (!queryTokens.length || queryTokens.some((token) => /^\d+$/.test(token))) return null;
+  const candidates = listings.map((listing) => {
+    const listingTokens = tokens([
+      listing.reference, listing.title, listing.purpose, listing.propertyType, listing.location,
+      listing.district, listing.rooms, ...listing.features, listing.urgent ? "çok acil" : "",
+    ].join(" "));
+    const scores = queryTokens.map((token) => tokenScore(token, listingTokens));
+    return { listing, score: scores.reduce<number>((sum, score) => sum + score, 0), allMatched: scores.every(Boolean) };
+  }).filter((candidate) => candidate.allMatched)
+    .sort((a, b) => b.score - a.score || Number(b.listing.featured) - Number(a.listing.featured) || b.listing.price - a.listing.price);
+
+  if (!candidates.length) return null;
+  const bestScore = candidates[0].score;
+  const best = candidates.filter((candidate) => candidate.score === bestScore).map((candidate) => candidate.listing);
+  if (best.length === 1) return { listings: best, autoOpen: true };
+  return { listings: best.slice(0, 3), autoOpen: false };
 }
 
 function actionsFromAnswer(answer: string, listings: Awaited<ReturnType<typeof getListings>>) {
@@ -79,12 +134,15 @@ export async function POST(request: Request) {
 
   const [company, listings] = await Promise.all([getCompanyProfile(), getListings()]);
   const latestQuestion = messages[messages.length - 1].content;
-  const directListing = resolveDirectListing(latestQuestion, listings);
-  if (directListing) {
+  const match = resolvePortfolioMatches(latestQuestion, listings);
+  if (match) {
+    const actions = match.listings.map(toAction);
     return NextResponse.json({
-      answer: `${directListing.reference} · ${directListing.title} açılıyor.`,
-      actions: [toAction(directListing)],
-      autoOpen: true,
+      answer: match.autoOpen
+        ? `${match.listings[0].reference} · ${match.listings[0].title} açılıyor.`
+        : `${match.listings.length} uygun seçenek buldum. İncelemek istediğiniz ilanı seçin.`,
+      actions,
+      autoOpen: match.autoOpen,
     });
   }
 
