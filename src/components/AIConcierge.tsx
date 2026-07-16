@@ -9,6 +9,17 @@ type AdminMode = "public" | "awaiting_password" | "ready" | "drafting";
 type AdminTarget = Pick<Listing, "id" | "reference" | "title" | "slug" | "published">;
 type Message = { role: "user" | "assistant"; content: string; actions?: ListingAction[]; adminDraft?: AdminDraft; adminDraftKind?: "create" | "edit"; adminDelete?: AdminTarget };
 type ListingContext = { reference: string; title: string };
+type WizardStep = "title" | "price" | "images" | "purpose" | "propertyType" | "location" | "rooms" | "areas" | "description" | "features" | "oldPrice" | "labels" | "review";
+type WizardChoice = { label: string; value: string };
+
+const wizardSteps: WizardStep[] = ["title", "price", "images", "purpose", "propertyType", "location", "rooms", "areas", "description", "features", "oldPrice", "labels", "review"];
+
+const emptyWizardDraft: AdminDraft = {
+  title: "", location: "", district: "Şile / İstanbul", price: 0, oldPrice: 0,
+  currency: "TRY", rooms: "", bathrooms: 0, grossArea: 0, netArea: 0,
+  landArea: 0, floor: "", description: "", features: [], images: [],
+  featured: false, urgent: false, published: false, isDemo: false,
+};
 
 const suggestions = [
   "Nehir kenarında villa arıyorum",
@@ -26,6 +37,56 @@ function formatDraftPrice(draft: AdminDraft) {
   return new Intl.NumberFormat("tr-TR", {
     style: "currency", currency: draft.currency ?? "TRY", maximumFractionDigits: 0,
   }).format(draft.price);
+}
+
+function parseMoney(value: string) {
+  const normalized = normalizeCommand(value);
+  const currency: ListingInput["currency"] = normalized.includes("dolar") || normalized.includes("usd")
+    ? "USD"
+    : normalized.includes("euro") || normalized.includes("eur") ? "EUR" : "TRY";
+  const match = value.replace(/\s/g, "").match(/\d[\d.,]*/)?.[0];
+  if (!match) return null;
+  const multiplier = normalized.includes("milyar") ? 1_000_000_000 : normalized.includes("milyon") ? 1_000_000 : normalized.includes("bin") ? 1_000 : 1;
+  let numeric: number;
+  if (multiplier > 1) {
+    const separators = [...match.matchAll(/[.,]/g)].map((item) => item.index ?? -1);
+    const last = separators.at(-1) ?? -1;
+    const decimal = last >= 0 && match.length - last - 1 <= 2;
+    const prepared = decimal
+      ? `${match.slice(0, last).replace(/[.,]/g, "")}.${match.slice(last + 1)}`
+      : match.replace(/[.,]/g, "");
+    numeric = Number(prepared) * multiplier;
+  } else {
+    numeric = Number(match.replace(/[.,]/g, ""));
+  }
+  return Number.isFinite(numeric) && numeric > 0 ? { amount: Math.round(numeric), currency } : null;
+}
+
+function wizardQuestion(step: WizardStep, draft: AdminDraft) {
+  const questions: Record<WizardStep, string> = {
+    title: "1. adım · İlanın müşteriye görünecek başlığı nedir? Örnek: Ağva Merkezde Nehir Manzaralı Villa",
+    price: "2. adım · Satış veya kira fiyatını yazın. Para birimini de belirtebilirsiniz. Örnek: 12,5 milyon TL",
+    images: "3. adım · Şimdi gerçek ilan fotoğraflarını yükleyin. Birden fazla görseli birlikte seçebilirsiniz; ilk görsel kapak olur. Fotoğraf henüz hazır değilse ‘atla’ yazabilirsiniz.",
+    purpose: "4. adım · İlan satılık mı, kiralık mı?",
+    propertyType: "5. adım · Emlak tipi nedir?",
+    location: "6. adım · Bölge ve ilçe bilgisini yazın. Örnek: Ağva Merkez, Şile / İstanbul",
+    rooms: draft.propertyType === "Arsa" ? "7. adım · Arsa ilanında oda bilgisi gerekmez; ‘atla’ diyebilirsiniz." : "7. adım · Oda ve banyo sayısını yazın. Örnek: 4+1, 3 banyo",
+    areas: draft.propertyType === "Arsa" ? "8. adım · Arsa alanını yazın. Örnek: arsa 850 m²" : "8. adım · Alan ve kat bilgilerini yazın. Örnek: brüt 240, net 210, arsa 500, kat 2",
+    description: "9. adım · Müşterinin ilgisini çekecek ilan açıklamasını yazın. Hazır değilse ‘atla’ diyebilirsiniz.",
+    features: "10. adım · Öne çıkan özellikleri virgülle ayırın. Örnek: şömine, havuz, otopark, nehir manzarası. Yoksa ‘atla’ yazın.",
+    oldPrice: "11. adım · Fiyat indirimi varsa eski fiyatı yazın. İndirim yoksa ‘yok’ veya ‘atla’ yazın.",
+    labels: "12. adım · İlan etiketi seçin: normal, çok acil, öne çıkar veya ikisi de.",
+    review: "Tüm adımlar tamamlandı. Bilgileri ve fotoğrafları kontrol edin; ardından ‘Taslak kaydet’ veya ‘Hemen yayınla’ seçeneğini kullanın.",
+  };
+  return questions[step];
+}
+
+function wizardChoices(step: WizardStep): WizardChoice[] {
+  if (step === "purpose") return [{ label: "Satılık", value: "satılık" }, { label: "Kiralık", value: "kiralık" }];
+  if (step === "propertyType") return ["Villa", "Müstakil Ev", "Daire", "Arsa", "Ticari"].map((value) => ({ label: value, value }));
+  if (step === "labels") return ["Normal", "Çok acil", "Öne çıkar", "İkisi de"].map((value) => ({ label: value, value }));
+  if (["images", "rooms", "description", "features", "oldPrice"].includes(step)) return [{ label: "Bu adımı atla", value: "atla" }];
+  return [];
 }
 
 function toAdminDraft(source: Listing): AdminDraft {
@@ -48,6 +109,7 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
   const [redirecting, setRedirecting] = useState(false);
   const [adminMode, setAdminMode] = useState<AdminMode>("public");
   const [adminDraft, setAdminDraft] = useState<AdminDraft | null>(null);
+  const [wizardStep, setWizardStep] = useState<WizardStep | null>(null);
   const [editingTarget, setEditingTarget] = useState<AdminTarget | null>(null);
   const [pendingDelete, setPendingDelete] = useState<AdminTarget | null>(null);
   const [savingDraft, setSavingDraft] = useState(false);
@@ -187,7 +249,9 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
 
   function beginListingDraft() {
     setInput("");
-    setAdminDraft(null);
+    const draft = { ...emptyWizardDraft, features: [], images: [] };
+    setAdminDraft(draft);
+    setWizardStep("title");
     setEditingTarget(null);
     setPendingDelete(null);
     setAdminMode("drafting");
@@ -195,9 +259,141 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
       { role: "user", content: "ilan ekle" },
       {
         role: "assistant",
-        content: "Elbette. İlanı doğal bir cümleyle anlatın. Başlık, satılık/kiralık, emlak tipi, bölge ve fiyat zorunlu; oda, m², açıklama, özellikler, eski fiyat ve “çok acil” bilgisini de aynı mesajda yazabilirsiniz. Ardından bir veya birden fazla fotoğrafı birlikte yükleyebilirsiniz.",
+        content: `Elbette. Yeni ilan sihirbazını başlattım. Her adımda yalnız bir bilgi isteyeceğim; cevabınızı kontrol edip sıradaki adıma geçeceğim. İstediğiniz zaman “geri”, “özet” veya “iptal” yazabilirsiniz.\n\n${wizardQuestion("title", draft)}`,
       },
     ]);
+  }
+
+  function wizardSummary(draft: AdminDraft) {
+    return [
+      draft.title || "Başlık bekleniyor",
+      draft.price ? formatDraftPrice(draft) : "Fiyat bekleniyor",
+      draft.purpose,
+      draft.propertyType,
+      draft.location,
+      draft.images?.length ? `${draft.images.length} görsel` : "Görsel yok",
+    ].filter(Boolean).join(" · ");
+  }
+
+  function moveWizard(step: WizardStep, draft: AdminDraft) {
+    setAdminDraft(draft);
+    setWizardStep(step);
+    setMessages((current) => [...current, {
+      role: "assistant",
+      content: wizardQuestion(step, draft),
+      ...(step === "review" ? { adminDraft: draft, adminDraftKind: "create" as const } : {}),
+    }]);
+  }
+
+  function advanceWizard(currentStep: WizardStep, draft: AdminDraft) {
+    const nextStep = wizardSteps[wizardSteps.indexOf(currentStep) + 1] ?? "review";
+    moveWizard(nextStep, draft);
+  }
+
+  function wizardCorrection(message: string) {
+    setMessages((current) => [...current, { role: "assistant", content: message }]);
+  }
+
+  async function answerListingWizard(answer: string) {
+    if (!wizardStep || !adminDraft) return;
+    setInput("");
+    setError("");
+    const command = normalizeCommand(answer);
+    setMessages((current) => [...current, { role: "user", content: answer }]);
+
+    if (command === "ozet" || command === "durum") {
+      wizardCorrection(`Şu ana kadar: ${wizardSummary(adminDraft)}\n\n${wizardQuestion(wizardStep, adminDraft)}`);
+      return;
+    }
+    if (command === "geri") {
+      const previousStep = wizardSteps[Math.max(0, wizardSteps.indexOf(wizardStep) - 1)];
+      const resumedDraft = { ...adminDraft, features: [...(adminDraft.features ?? [])], images: [...(adminDraft.images ?? [])] };
+      setAdminDraft(resumedDraft);
+      setWizardStep(previousStep);
+      wizardCorrection(`Bir önceki adıma döndüm. Mevcut cevabın üzerine yenisini yazabilirsiniz.\n\n${wizardQuestion(previousStep, resumedDraft)}`);
+      return;
+    }
+
+    const skipped = ["atla", "yok", "gec", "hazir degil"].includes(command);
+    let nextDraft: AdminDraft = { ...adminDraft };
+
+    if (wizardStep === "title") {
+      const title = answer.trim().slice(0, 160);
+      if (title.length < 5 || skipped) return wizardCorrection("Başlık zorunludur ve en az 5 karakter olmalıdır. Lütfen müşteriye görünecek açıklayıcı başlığı yazın.");
+      nextDraft.title = title;
+    } else if (wizardStep === "price") {
+      const money = parseMoney(answer);
+      if (!money) return wizardCorrection("Fiyatı anlayamadım. Örneğin “12.500.000 TL”, “12,5 milyon TL” veya “2500 USD” biçiminde yazın.");
+      nextDraft.price = money.amount;
+      nextDraft.currency = money.currency;
+    } else if (wizardStep === "images") {
+      if (!skipped) return wizardCorrection("Fotoğraf eklemek için yukarıdaki “Görsel seç” alanını kullanın. Henüz fotoğraf yoksa “atla” yazabilirsiniz.");
+    } else if (wizardStep === "purpose") {
+      if (command.includes("kiralik")) nextDraft.purpose = "Kiralık";
+      else if (command.includes("satilik")) nextDraft.purpose = "Satılık";
+      else return wizardCorrection("Lütfen “Satılık” veya “Kiralık” seçeneklerinden birini seçin.");
+    } else if (wizardStep === "propertyType") {
+      const types: Array<[string, NonNullable<AdminDraft["propertyType"]>]> = [
+        ["mustakil", "Müstakil Ev"], ["villa", "Villa"], ["daire", "Daire"], ["arsa", "Arsa"], ["ticari", "Ticari"],
+      ];
+      nextDraft.propertyType = types.find(([keyword]) => command.includes(keyword))?.[1];
+      if (!nextDraft.propertyType) return wizardCorrection("Emlak tipini Villa, Müstakil Ev, Daire, Arsa veya Ticari olarak seçin.");
+    } else if (wizardStep === "location") {
+      const parts = answer.split(",").map((item) => item.trim()).filter(Boolean);
+      if (!parts[0] || parts[0].length < 2 || skipped) return wizardCorrection("Bölge zorunludur. Örneğin “Ağva Merkez, Şile / İstanbul” yazın.");
+      nextDraft.location = parts[0].slice(0, 100);
+      if (parts.length > 1) nextDraft.district = parts.slice(1).join(", ").slice(0, 100);
+    } else if (wizardStep === "rooms") {
+      if (skipped) {
+        nextDraft.rooms = "";
+        nextDraft.bathrooms = 0;
+      } else {
+        const roomMatch = answer.match(/\d+\s*\+\s*\d+/);
+        const bathroomMatch = command.match(/(\d+)\s*banyo/);
+        if (!roomMatch && nextDraft.propertyType !== "Arsa") return wizardCorrection("Oda bilgisini “4+1, 3 banyo” şeklinde yazın veya bu adımı atlayın.");
+        nextDraft.rooms = roomMatch?.[0].replace(/\s/g, "") ?? "";
+        nextDraft.bathrooms = bathroomMatch ? Number(bathroomMatch[1]) : 0;
+      }
+    } else if (wizardStep === "areas") {
+      if (!skipped) {
+        const gross = command.match(/brut\s*(\d+)/)?.[1];
+        const net = command.match(/net\s*(\d+)/)?.[1];
+        const land = command.match(/arsa\s*(\d+)/)?.[1];
+        const floor = command.match(/kat\s*(\d+)/)?.[1];
+        const onlyNumber = command.match(/^\d+$/)?.[0];
+        if (!gross && !net && !land && !floor && !onlyNumber) return wizardCorrection("Alanları “brüt 240, net 210, arsa 500, kat 2” biçiminde yazın. Bilgi yoksa “atla” diyebilirsiniz.");
+        if (gross) nextDraft.grossArea = Number(gross);
+        if (net) nextDraft.netArea = Number(net);
+        if (land) nextDraft.landArea = Number(land);
+        if (floor) nextDraft.floor = floor;
+        if (onlyNumber) {
+          if (nextDraft.propertyType === "Arsa") nextDraft.landArea = Number(onlyNumber);
+          else nextDraft.grossArea = Number(onlyNumber);
+        }
+      }
+    } else if (wizardStep === "description") {
+      nextDraft.description = skipped ? "" : answer.trim().slice(0, 2400);
+    } else if (wizardStep === "features") {
+      nextDraft.features = skipped ? [] : answer.split(",").map((item) => item.trim().slice(0, 100)).filter(Boolean).slice(0, 30);
+    } else if (wizardStep === "oldPrice") {
+      if (skipped) nextDraft.oldPrice = 0;
+      else {
+        const oldMoney = parseMoney(answer);
+        if (!oldMoney || oldMoney.amount <= (nextDraft.price ?? 0)) return wizardCorrection("Eski fiyat, yeni fiyattan yüksek olmalıdır. İndirim yoksa “yok” yazabilirsiniz.");
+        nextDraft.oldPrice = oldMoney.amount;
+      }
+    } else if (wizardStep === "labels") {
+      nextDraft.urgent = command.includes("acil") || command.includes("ikisi");
+      nextDraft.featured = command.includes("one cikar") || command.includes("ikisi");
+      if (!nextDraft.urgent && !nextDraft.featured && !command.includes("normal")) return wizardCorrection("Normal, Çok acil, Öne çıkar veya İkisi de seçeneklerinden birini seçin.");
+    } else if (wizardStep === "review") {
+      if (command.includes("taslak")) await saveListingDraft(adminDraft, false);
+      else if (command.includes("yayinla") || command.includes("yayin")) await saveListingDraft(adminDraft, true);
+      else wizardCorrection("Son karar için “taslak kaydet” veya “hemen yayınla” yazın. Bilgi değiştirmek için “geri” diyebilirsiniz.");
+      return;
+    }
+
+    advanceWizard(wizardStep, nextDraft);
   }
 
   async function refineListingDraft(instruction: string, baseDraft: AdminDraft | null = adminDraft, kind: "create" | "edit" = editingTarget ? "edit" : "create", appendUser = true) {
@@ -268,6 +464,7 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
       setEditingTarget(target);
       setPendingDelete(null);
       setAdminDraft(draft);
+      setWizardStep(null);
       setAdminMode("drafting");
       const normalized = normalizeCommand(instruction);
       const hasSpecificChange = ["fiyat", "baslik", "aciklama", "oda", "banyo", "metrekare", "m2", "bolge", "konum", "ozellik", "acil", "yayin", "kiralik", "satilik"].some((term) => normalized.includes(term)) &&
@@ -369,6 +566,7 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
       }
       setAdminMode("ready");
       setAdminDraft(null);
+      setWizardStep(null);
       setEditingTarget(null);
       setMessages((current) => [...current, {
         role: "assistant",
@@ -416,6 +614,10 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
         role: "assistant",
         content: `${uploaded.length} yeni görsel eklendi. İlanda toplam ${nextDraft.images?.length ?? 0} görsel var; ilk görsel kapak olarak kullanılır.`,
       }]);
+      if (wizardStep === "images" && !editingTarget) {
+        setWizardStep("purpose");
+        setMessages((current) => [...current, { role: "assistant", content: wizardQuestion("purpose", nextDraft) }]);
+      }
     } catch {
       setError("Görseller yüklenirken bağlantı kurulamadı.");
     } finally {
@@ -439,6 +641,7 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
 
   function cancelListingDraft() {
     setAdminDraft(null);
+    setWizardStep(null);
     setEditingTarget(null);
     setAdminMode("ready");
     setMessages((current) => [...current, { role: "assistant", content: "İşlemi iptal ettim. Herhangi bir kayıt veya değişiklik yapılmadı." }]);
@@ -448,6 +651,7 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
     await fetch("/api/admin/logout", { method: "POST" }).catch(() => null);
     setAdminMode("public");
     setAdminDraft(null);
+    setWizardStep(null);
     setEditingTarget(null);
     setPendingDelete(null);
     setMessages([{ role: "assistant", content: "Yönetici oturumu güvenli biçimde kapatıldı." }]);
@@ -507,7 +711,8 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
         cancelListingDraft();
         return;
       }
-      await refineListingDraft(question);
+      if (!editingTarget && wizardStep) await answerListingWizard(question);
+      else await refineListingDraft(question);
       return;
     }
     const next = [...messages, { role: "user" as const, content: question }];
@@ -602,6 +807,17 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
           </div>
           {messages.length === 0 && <div className="ai-suggestions">{contextualSuggestions.map((item) => <button type="button" key={item} onClick={() => void ask(item)}>{item}</button>)}</div>}
           {adminMode === "ready" && <div className="ai-suggestions ai-admin-actions"><button type="button" onClick={beginListingDraft}>+ Yeni ilan ekle</button>{listing && <button type="button" onClick={() => void beginEditingListing("bu ilanı düzenle")}>Bu ilanı düzenle</button>}{listing && <button className="danger" type="button" onClick={() => void requestListingDelete("bu ilanı sil")}>Bu ilanı sil</button>}<button type="button" onClick={() => void leaveAdminMode()}>Oturumu kapat</button></div>}
+          {adminMode === "drafting" && !editingTarget && wizardStep && wizardStep !== "review" && adminDraft && <div className="ai-wizard-card">
+            <div className="ai-wizard-progress"><span>SİHİRBAZ</span><strong>{wizardSteps.indexOf(wizardStep) + 1} / {wizardSteps.length - 1}</strong></div>
+            <div className="ai-wizard-track"><span style={{ width: `${((wizardSteps.indexOf(wizardStep) + 1) / (wizardSteps.length - 1)) * 100}%` }} /></div>
+            <p>{wizardQuestion(wizardStep, adminDraft)}</p>
+            {wizardStep === "images" && <label className="ai-wizard-upload">
+              <input type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={savingDraft} onChange={(event) => void uploadDraftImages(event, adminDraft)} />
+              <span>＋</span><div><strong>Görsel seç</strong><small>Birden fazla JPG, PNG veya WebP seçebilirsiniz</small></div>
+            </label>}
+            {wizardChoices(wizardStep).length > 0 && <div className="ai-wizard-choices">{wizardChoices(wizardStep).map((choice) => <button type="button" key={choice.value} disabled={savingDraft} onClick={() => void answerListingWizard(choice.value)}>{choice.label}</button>)}</div>}
+            <div className="ai-wizard-tools">{wizardSteps.indexOf(wizardStep) > 0 && <button type="button" onClick={() => void answerListingWizard("geri")}>← Geri</button>}<button type="button" onClick={() => void answerListingWizard("özet")}>Özet</button><button type="button" onClick={cancelListingDraft}>İptal</button></div>
+          </div>}
           <form onSubmit={submit}>
             <input
               type={adminMode === "awaiting_password" ? "password" : "text"}
@@ -609,7 +825,7 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
               value={input}
               onChange={(event) => setInput(event.target.value)}
               maxLength={adminMode === "awaiting_password" ? 256 : adminMode === "drafting" ? 3000 : 1200}
-              placeholder={adminMode === "awaiting_password" ? "Admin şifresi" : adminMode === "drafting" ? "İlan bilgilerini veya düzeltmeyi yazın…" : adminActive ? "Örneğin: ilan ekle" : "Nasıl bir mülk arıyorsunuz?"}
+              placeholder={adminMode === "awaiting_password" ? "Admin şifresi" : wizardStep ? "Bu adıma cevabınızı yazın…" : adminMode === "drafting" ? "Değiştirmek istediğiniz bilgiyi yazın…" : adminActive ? "Örneğin: ilan ekle" : "Nasıl bir mülk arıyorsunuz?"}
               aria-label={adminMode === "awaiting_password" ? "Admin şifresi" : "Yapay zekâya sorunuz"}
               disabled={redirecting || savingDraft}
             />

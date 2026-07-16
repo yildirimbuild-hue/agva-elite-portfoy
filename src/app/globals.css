@@ -2100,6 +2100,25 @@ img {
 .ai-admin-actions { padding-top: 2px; }
 .ai-admin-actions button:first-child { color: white; border-color: var(--forest); background: var(--forest); }
 .ai-admin-actions button.danger { color:#9a3f34; border-color:#d8b8b2; background:#fff7f5; }
+.ai-wizard-card { margin:0 12px 10px; padding:12px; color:#2d4037; border:1px solid #d8d1c2; background:#fffdf8; box-shadow:0 8px 22px rgba(14,35,26,.08); }
+.ai-wizard-progress { display:flex; align-items:center; justify-content:space-between; }
+.ai-wizard-progress span { color:#8d6937; font-size:7px; font-weight:700; letter-spacing:.14em; }
+.ai-wizard-progress strong { color:#526059; font-size:8px; }
+.ai-wizard-track { height:4px; margin-top:8px; background:#e7e1d5; overflow:hidden; }
+.ai-wizard-track span { height:100%; display:block; background:var(--brass); transition:width .25s ease; }
+.ai-wizard-card > p { margin:10px 0 0; color:#526059; font-size:9px; line-height:1.5; }
+.ai-wizard-choices { margin-top:10px; display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.ai-wizard-choices button,.ai-wizard-tools button { min-height:34px; padding:7px 8px; color:var(--forest); border:1px solid #d5cec0; background:white; font-size:7px; font-weight:700; cursor:pointer; }
+.ai-wizard-choices button:hover { color:white; border-color:var(--forest); background:var(--forest); }
+.ai-wizard-upload { position:relative; margin-top:10px; min-height:58px; padding:9px; display:flex; align-items:center; gap:9px; color:var(--forest); border:2px dashed #b47b35; background:#fff8e9; cursor:pointer; }
+.ai-wizard-upload input { position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; }
+.ai-wizard-upload > span { width:34px; height:34px; display:grid; flex:0 0 auto; place-items:center; color:white; border-radius:50%; background:#b47b35; font-size:18px; }
+.ai-wizard-upload > div { display:flex; flex-direction:column; gap:3px; }
+.ai-wizard-upload strong { font-size:8px; letter-spacing:.06em; text-transform:uppercase; }
+.ai-wizard-upload small { color:#817767; font-size:7px; }
+.ai-wizard-tools { margin-top:9px; padding-top:9px; display:flex; justify-content:flex-end; gap:5px; border-top:1px solid #ebe5d9; }
+.ai-wizard-tools button { min-height:28px; padding:5px 8px; color:#65716b; background:#f8f5ee; }
+.ai-wizard-tools button:last-child { color:#974238; }
 .ai-admin-delete-card { margin-top:11px; padding:12px; color:#4b302c; border:1px solid #d5aaa2; background:#fff6f4; }
 .ai-admin-delete-card > span { color:#a23f34; font-size:7px; font-weight:700; letter-spacing:.12em; }
 .ai-admin-delete-card > strong { margin-top:7px; display:block; font:400 15px/1.25 var(--serif); }
@@ -2257,6 +2276,9 @@ button,a,input,select,textarea { touch-action: manipulation; }
   .ai-messages { padding: 12px; }
   .ai-suggestions { padding: 0 12px 10px; max-height: 92px; overflow-y: auto; }
   .ai-panel form input { font-size: 16px; }
+  .ai-wizard-card { max-height: 245px; overflow-y: auto; }
+  .ai-wizard-choices button { min-height: 44px; }
+  .ai-wizard-tools button { min-height: 40px; }
 }
 
 @media (max-width: 420px) {
