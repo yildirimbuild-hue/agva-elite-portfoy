@@ -9,6 +9,7 @@
 .DS_Store
 *.log
 .env*
+!.env.example
 
 # typescript
 *.tsbuildinfo

@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3200",
+    "seed": "node scripts/generate-seed.mjs",
     "validate:data": "node scripts/validate-data.mjs",
     "build": "npm run validate:data && next build",
     "start": "next start -p 3200"

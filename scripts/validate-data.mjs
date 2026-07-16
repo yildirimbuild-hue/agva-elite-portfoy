@@ -1,18 +1,18 @@
 import { readFile } from "node:fs/promises";
 
-const dataUrl = new URL("../src/data/listings.json", import.meta.url);
+const dataUrl = new URL("../data/listings.json", import.meta.url);
 const listings = JSON.parse(await readFile(dataUrl, "utf8"));
 const required = [
-  "ilan_id",
-  "ilan_basligi",
-  "para_birimi",
-  "konum",
-  "satici_tipi",
-  "gorsel_url",
-  "tarama_tarihi",
-  "kategori",
-  "kod",
-  "status"
+  "id",
+  "reference",
+  "title",
+  "purpose",
+  "propertyType",
+  "location",
+  "price",
+  "currency",
+  "images",
+  "published"
 ];
 
 if (!Array.isArray(listings) || listings.length === 0) {
@@ -25,10 +25,10 @@ for (const [index, listing] of listings.entries()) {
   if (missing.length) {
     throw new Error(`Kayıt ${index + 1} eksik alan içeriyor: ${missing.join(", ")}`);
   }
-  if (ids.has(listing.ilan_id)) {
-    throw new Error(`Mükerrer ilan_id: ${listing.ilan_id}`);
+  if (ids.has(listing.id)) {
+    throw new Error(`Mükerrer ilan id: ${listing.id}`);
   }
-  ids.add(listing.ilan_id);
+  ids.add(listing.id);
 }
 
 console.log(`Portföy doğrulandı: ${listings.length} benzersiz kayıt.`);

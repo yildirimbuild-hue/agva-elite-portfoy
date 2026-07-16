@@ -1,0 +1,249 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import type { Listing } from "@/lib/types";
+
+const formatPrice = (listing: Listing) =>
+  new Intl.NumberFormat("tr-TR", {
+    style: "currency",
+    currency: listing.currency,
+    maximumFractionDigits: 0,
+  }).format(listing.price);
+
+function Arrow() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="icon">
+      <path d="M5 12h13M13 6l6 6-6 6" />
+    </svg>
+  );
+}
+
+export default function PortfolioApp({ listings }: { listings: Listing[] }) {
+  const [query, setQuery] = useState("");
+  const [purpose, setPurpose] = useState("Tümü");
+  const [propertyType, setPropertyType] = useState("Tümü");
+  const [location, setLocation] = useState("Tümü");
+  const [sort, setSort] = useState("featured");
+  const [visible, setVisible] = useState(12);
+  const [selected, setSelected] = useState<Listing | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const locations = useMemo(() => [...new Set(listings.map((item) => item.location))].sort(), [listings]);
+  const propertyTypes = useMemo(() => [...new Set(listings.map((item) => item.propertyType))].sort(), [listings]);
+
+  const filtered = useMemo(() => {
+    const normalized = query.trim().toLocaleLowerCase("tr-TR");
+    const next = listings.filter((item) => {
+      const matchesText = !normalized || `${item.title} ${item.location} ${item.reference}`.toLocaleLowerCase("tr-TR").includes(normalized);
+      return matchesText && (purpose === "Tümü" || item.purpose === purpose) &&
+        (propertyType === "Tümü" || item.propertyType === propertyType) &&
+        (location === "Tümü" || item.location === location);
+    });
+    return [...next].sort((a, b) => {
+      if (sort === "price-asc") return a.price - b.price;
+      if (sort === "price-desc") return b.price - a.price;
+      if (sort === "newest") return b.updatedAt.localeCompare(a.updatedAt);
+      return Number(b.featured) - Number(a.featured);
+    });
+  }, [listings, location, propertyType, purpose, query, sort]);
+
+  useEffect(() => setVisible(12), [query, purpose, propertyType, location, sort]);
+
+  useEffect(() => {
+    if (!selected) return;
+    const onKey = (event: KeyboardEvent) => event.key === "Escape" && setSelected(null);
+    document.body.classList.add("modal-open");
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.classList.remove("modal-open");
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [selected]);
+
+  const selectPurpose = (value: string) => {
+    setPurpose(value);
+    setMenuOpen(false);
+    document.querySelector("#portfoy")?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const clearFilters = () => {
+    setQuery("");
+    setPurpose("Tümü");
+    setPropertyType("Tümü");
+    setLocation("Tümü");
+  };
+
+  return (
+    <>
+      <header className="catalog-header">
+        <a className="brand catalog-brand" href="#top" aria-label="İKİSU ana sayfa">
+          <span className="brand-mark">İK</span>
+          <span className="brand-copy"><strong>İKİSU</strong><small>EMLAK · AĞVA</small></span>
+        </a>
+        <nav className={menuOpen ? "catalog-nav open" : "catalog-nav"}>
+          <button type="button" onClick={() => selectPurpose("Satılık")}>Satılık</button>
+          <button type="button" onClick={() => selectPurpose("Kiralık")}>Kiralık</button>
+          <button type="button" onClick={() => { setPropertyType("Arsa"); selectPurpose("Tümü"); }}>Arsa</button>
+          <a href="#portfoy" onClick={() => setMenuOpen(false)}>Tüm portföy</a>
+          <a className="admin-nav-link" href="/admin">Admin paneli</a>
+        </nav>
+        <button className="menu-button catalog-menu" type="button" onClick={() => setMenuOpen((value) => !value)} aria-label="Menüyü aç veya kapat">
+          <span /><span />
+        </button>
+      </header>
+
+      <main id="top">
+        <section className="catalog-hero">
+          <img src="/images/hero-agva.webp" alt="Ağva'da nehir kıyısında villa" />
+          <div className="catalog-hero-shade" />
+          <div className="catalog-hero-content">
+            <span className="catalog-kicker">AĞVA · ŞİLE · İSTANBUL</span>
+            <h1>Aradığınız yer,<br /><em>burada başlıyor.</em></h1>
+            <p>Satılık ve kiralık villa, müstakil ev, daire, arsa ve ticari portföyler.</p>
+          </div>
+
+          <div className="hero-search" aria-label="Portföy arama">
+            <label>
+              <span>İşlem</span>
+              <select value={purpose} onChange={(event) => setPurpose(event.target.value)}>
+                <option>Tümü</option><option>Satılık</option><option>Kiralık</option>
+              </select>
+            </label>
+            <label>
+              <span>Emlak tipi</span>
+              <select value={propertyType} onChange={(event) => setPropertyType(event.target.value)}>
+                <option>Tümü</option>{propertyTypes.map((item) => <option key={item}>{item}</option>)}
+              </select>
+            </label>
+            <label>
+              <span>Bölge</span>
+              <select value={location} onChange={(event) => setLocation(event.target.value)}>
+                <option>Tümü</option>{locations.map((item) => <option key={item}>{item}</option>)}
+              </select>
+            </label>
+            <label className="keyword-field">
+              <span>Anahtar kelime</span>
+              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Villa, Göksu, IKS-0001..." />
+            </label>
+            <button type="button" onClick={() => document.querySelector("#portfoy")?.scrollIntoView({ behavior: "smooth" })}>
+              İlan ara <Arrow />
+            </button>
+          </div>
+        </section>
+
+        {listings.some((item) => item.isDemo) && (
+          <div className="demo-notice page-pad">
+            <span>DEMO VERİLER</span>
+            <p>Portföy yapısını göstermek için örnek ilanlar kullanılıyor. Gerçek ilanlar admin panelinden girilebilir.</p>
+            <a href="/admin">Admin paneline git <Arrow /></a>
+          </div>
+        )}
+
+        <section className="portfolio-summary page-pad">
+          <div><strong>{listings.length}</strong><span>yayındaki ilan</span></div>
+          <div><strong>{listings.filter((item) => item.purpose === "Satılık").length}</strong><span>satılık portföy</span></div>
+          <div><strong>{listings.filter((item) => item.purpose === "Kiralık").length}</strong><span>kiralık portföy</span></div>
+          <div><strong>{locations.length}</strong><span>Ağva bölgesi</span></div>
+        </section>
+
+        <section className="portfolio-catalog page-pad" id="portfoy">
+          <div className="catalog-title-row">
+            <div>
+              <span className="eyebrow dark"><span>GÜNCEL PORTFÖY</span></span>
+              <h2>Tüm ilanlar</h2>
+            </div>
+            <p>{filtered.length} ilan bulundu</p>
+          </div>
+
+          <div className="catalog-toolbar">
+            <div className="quick-tabs">
+              {["Tümü", "Satılık", "Kiralık"].map((item) => (
+                <button key={item} className={purpose === item ? "active" : ""} type="button" onClick={() => setPurpose(item)}>{item}</button>
+              ))}
+            </div>
+            <select value={propertyType} onChange={(event) => setPropertyType(event.target.value)} aria-label="Emlak tipi">
+              <option>Tümü</option>{propertyTypes.map((item) => <option key={item}>{item}</option>)}
+            </select>
+            <select value={location} onChange={(event) => setLocation(event.target.value)} aria-label="Bölge">
+              <option>Tümü</option>{locations.map((item) => <option key={item}>{item}</option>)}
+            </select>
+            <select value={sort} onChange={(event) => setSort(event.target.value)} aria-label="Sıralama">
+              <option value="featured">Öne çıkanlar</option>
+              <option value="newest">En yeni</option>
+              <option value="price-asc">Fiyat: artan</option>
+              <option value="price-desc">Fiyat: azalan</option>
+            </select>
+          </div>
+
+          {filtered.length === 0 ? (
+            <div className="empty-results"><h3>Bu kriterlerde ilan bulunamadı.</h3><button type="button" onClick={clearFilters}>Filtreleri temizle</button></div>
+          ) : (
+            <div className="property-grid">
+              {filtered.slice(0, visible).map((listing) => (
+                <article className="property-card" key={listing.id}>
+                  <button className="property-hit" type="button" onClick={() => setSelected(listing)} aria-label={`${listing.title} detayını aç`} />
+                  <div className="property-image">
+                    <img src={listing.images[0] || "/images/forest-house.webp"} alt={listing.title} />
+                    <div className="property-badges">
+                      <span>{listing.purpose}</span>{listing.featured && <span>Öne çıkan</span>}{listing.isDemo && <span>Demo</span>}
+                    </div>
+                    <button className="favorite" type="button" aria-label="Favoriye ekle">♡</button>
+                  </div>
+                  <div className="property-content">
+                    <div className="property-meta"><span>{listing.propertyType}</span><span>{listing.reference}</span></div>
+                    <h3>{listing.title}</h3>
+                    <p className="property-location">{listing.location} · {listing.district}</p>
+                    <div className="property-specs">
+                      {listing.rooms !== "—" && <span>{listing.rooms}</span>}
+                      {listing.grossArea > 0 && <span>{listing.grossArea} m²</span>}
+                      {listing.landArea > 0 && <span>{listing.landArea} m² arsa</span>}
+                    </div>
+                    <div className="property-price"><strong>{formatPrice(listing)}</strong><span>Detaylar →</span></div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+
+          {visible < filtered.length && <button className="load-more" type="button" onClick={() => setVisible((value) => value + 12)}>Daha fazla ilan göster</button>}
+        </section>
+
+        <section className="catalog-cta page-pad">
+          <div><span>İLANINIZI DEĞERLENDİRELİM</span><h2>Ağva’daki mülkünüzü doğru alıcıyla buluşturalım.</h2></div>
+          <a href="/admin">Portföy ekle <Arrow /></a>
+        </section>
+      </main>
+
+      <footer className="catalog-footer page-pad">
+        <div className="footer-logo">İKİSU</div>
+        <p>Ağva ve Şile bölgesi satılık, kiralık ve yatırım portföyleri.</p>
+        <div><a href="#portfoy">Tüm ilanlar</a><a href="/admin">Admin paneli</a><a href="#top">Yukarı dön ↑</a></div>
+      </footer>
+
+      {selected && (
+        <div className="property-modal" role="dialog" aria-modal="true" aria-labelledby="property-modal-title">
+          <button className="property-modal-backdrop" type="button" onClick={() => setSelected(null)} aria-label="Kapat" />
+          <div className="property-modal-panel">
+            <button className="modal-close" type="button" onClick={() => setSelected(null)} aria-label="Kapat">×</button>
+            <div className="property-modal-image"><img src={selected.images[0]} alt={selected.title} /></div>
+            <div className="property-modal-content">
+              <div className="property-meta"><span>{selected.purpose} · {selected.propertyType}</span><span>{selected.reference}</span></div>
+              <h2 id="property-modal-title">{selected.title}</h2>
+              <p className="property-location">{selected.location} · {selected.district}</p>
+              <strong className="modal-price">{formatPrice(selected)}</strong>
+              <div className="modal-spec-grid">
+                <div><span>Oda</span><strong>{selected.rooms}</strong></div>
+                <div><span>Brüt alan</span><strong>{selected.grossArea || "—"} m²</strong></div>
+                <div><span>Arsa</span><strong>{selected.landArea || "—"} m²</strong></div>
+                <div><span>Banyo</span><strong>{selected.bathrooms || "—"}</strong></div>
+              </div>
+              <p className="modal-description">{selected.description}</p>
+              <div className="modal-features">{selected.features.map((item) => <span key={item}>✓ {item}</span>)}</div>
+              {selected.isDemo && <div className="modal-demo-warning">Bu kayıt sistem gösterimi için oluşturulmuş örnek ilandır.</div>}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

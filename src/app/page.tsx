@@ -1,6 +1,8 @@
-import Experience from "@/components/Experience";
-import listings from "@/data/listings.json";
+import PortfolioApp from "@/components/PortfolioApp";
+import { getListings } from "@/lib/listing-store";
 
-export default function Home() {
-  return <Experience listings={listings} />;
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  return <PortfolioApp listings={await getListings()} />;
 }

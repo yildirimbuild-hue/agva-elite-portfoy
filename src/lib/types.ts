@@ -1,0 +1,35 @@
+export type ListingPurpose = "Satılık" | "Kiralık";
+export type PropertyType = "Villa" | "Müstakil Ev" | "Daire" | "Arsa" | "Ticari";
+
+export type Listing = {
+  id: string;
+  reference: string;
+  title: string;
+  slug: string;
+  purpose: ListingPurpose;
+  propertyType: PropertyType;
+  location: string;
+  district: string;
+  price: number;
+  currency: "TRY" | "USD" | "EUR";
+  rooms: string;
+  bathrooms: number;
+  grossArea: number;
+  netArea: number;
+  landArea: number;
+  floor: string;
+  description: string;
+  features: string[];
+  images: string[];
+  featured: boolean;
+  published: boolean;
+  isDemo: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ListingInput = Omit<Listing, "id" | "reference" | "slug" | "createdAt" | "updatedAt"> & {
+  id?: string;
+  reference?: string;
+  slug?: string;
+};
