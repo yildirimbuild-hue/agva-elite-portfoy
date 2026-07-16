@@ -4,13 +4,19 @@ import path from "node:path";
 import type { AdminSiteSettings } from "./types";
 
 type StoredSiteSettings = {
-  version: 1;
+  version: 2;
   aiEnabled: boolean;
   aiModel: string;
   assistantInstructions: string;
   whatsappNumber: string;
   phoneNumber: string;
   encryptedApiKey?: string;
+  voiceEnabled: boolean;
+  elevenLabsVoiceId: string;
+  elevenLabsModel: string;
+  voiceStability: number;
+  voiceSimilarity: number;
+  encryptedElevenLabsApiKey?: string;
   updatedAt: string;
 };
 
@@ -22,16 +28,28 @@ export type SiteSettingsUpdate = {
   phoneNumber?: unknown;
   apiKey?: unknown;
   clearApiKey?: unknown;
+  voiceEnabled?: unknown;
+  elevenLabsVoiceId?: unknown;
+  elevenLabsModel?: unknown;
+  voiceStability?: unknown;
+  voiceSimilarity?: unknown;
+  elevenLabsApiKey?: unknown;
+  clearElevenLabsApiKey?: unknown;
 };
 
 const localPath = path.join(process.cwd(), "data", "site-settings.json");
 const defaults: Omit<StoredSiteSettings, "updatedAt"> = {
-  version: 1,
+  version: 2,
   aiEnabled: true,
   aiModel: process.env.DEEPSEEK_MODEL ?? "deepseek-v4-flash",
   assistantInstructions: "",
   whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "",
   phoneNumber: process.env.NEXT_PUBLIC_PHONE_NUMBER ?? "",
+  voiceEnabled: Boolean(process.env.ELEVENLABS_API_KEY),
+  elevenLabsVoiceId: process.env.ELEVENLABS_VOICE_ID ?? "KAGDtM2gzDrjWlUp2KNe",
+  elevenLabsModel: process.env.ELEVENLABS_MODEL ?? "eleven_flash_v2_5",
+  voiceStability: 0.45,
+  voiceSimilarity: 0.82,
 };
 
 function githubConfig() {
@@ -126,10 +144,31 @@ function model(value: unknown) {
   return cleaned;
 }
 
+function voiceId(value: unknown) {
+  if (typeof value !== "string") return undefined;
+  const cleaned = value.trim();
+  if (!/^[a-z0-9_-]{8,64}$/i.test(cleaned)) throw new Error("ElevenLabs ses kimliği geçersiz.");
+  return cleaned;
+}
+
+function voiceModel(value: unknown) {
+  if (typeof value !== "string") return undefined;
+  const cleaned = value.trim();
+  if (!/^[a-z0-9._-]{3,80}$/i.test(cleaned)) throw new Error("ElevenLabs model adı geçersiz.");
+  return cleaned;
+}
+
+function unitValue(value: unknown, label: string) {
+  if (typeof value !== "number") return undefined;
+  if (!Number.isFinite(value) || value < 0 || value > 1) throw new Error(`${label} 0 ile 1 arasında olmalıdır.`);
+  return Math.round(value * 100) / 100;
+}
+
 export async function getRuntimeSiteSettings() {
   const stored = await readStoredSettings();
   const merged = { ...defaults, ...(stored ?? {}) };
   const managedKey = decrypt(stored?.encryptedApiKey);
+  const managedElevenLabsKey = decrypt(stored?.encryptedElevenLabsApiKey);
   return {
     aiEnabled: merged.aiEnabled,
     aiModel: merged.aiModel,
@@ -138,14 +177,21 @@ export async function getRuntimeSiteSettings() {
     phoneNumber: merged.phoneNumber,
     apiKey: managedKey || process.env.DEEPSEEK_API_KEY || "",
     apiKeySource: managedKey ? "managed" as const : process.env.DEEPSEEK_API_KEY ? "environment" as const : "none" as const,
+    voiceEnabled: merged.voiceEnabled,
+    elevenLabsVoiceId: merged.elevenLabsVoiceId,
+    elevenLabsModel: merged.elevenLabsModel,
+    voiceStability: merged.voiceStability,
+    voiceSimilarity: merged.voiceSimilarity,
+    elevenLabsApiKey: managedElevenLabsKey || process.env.ELEVENLABS_API_KEY || "",
+    elevenLabsApiKeySource: managedElevenLabsKey ? "managed" as const : process.env.ELEVENLABS_API_KEY ? "environment" as const : "none" as const,
     updatedAt: stored?.updatedAt ?? null,
   };
 }
 
 export async function getAdminSiteSettings(): Promise<AdminSiteSettings> {
   const settings = await getRuntimeSiteSettings();
-  const { apiKey, ...publicSettings } = settings;
-  return { ...publicSettings, hasApiKey: Boolean(apiKey) };
+  const { apiKey, elevenLabsApiKey, ...publicSettings } = settings;
+  return { ...publicSettings, hasApiKey: Boolean(apiKey), hasElevenLabsApiKey: Boolean(elevenLabsApiKey) };
 }
 
 export async function updateSiteSettings(input: SiteSettingsUpdate) {
@@ -153,15 +199,25 @@ export async function updateSiteSettings(input: SiteSettingsUpdate) {
   const current = { ...defaults, ...(currentStored ?? {}) };
   const apiKey = typeof input.apiKey === "string" ? input.apiKey.trim() : "";
   if (apiKey && apiKey.length < 20) throw new Error("DeepSeek API anahtarı beklenenden kısa.");
+  const elevenLabsApiKey = typeof input.elevenLabsApiKey === "string" ? input.elevenLabsApiKey.trim() : "";
+  if (elevenLabsApiKey && elevenLabsApiKey.length < 20) throw new Error("ElevenLabs API anahtarı beklenenden kısa.");
   const next: StoredSiteSettings = {
     ...current,
-    version: 1,
+    version: 2,
     aiEnabled: typeof input.aiEnabled === "boolean" ? input.aiEnabled : current.aiEnabled,
     aiModel: model(input.aiModel) ?? current.aiModel,
     assistantInstructions: typeof input.assistantInstructions === "string" ? input.assistantInstructions.trim().slice(0, 1500) : current.assistantInstructions,
     whatsappNumber: phone(input.whatsappNumber) ?? current.whatsappNumber,
     phoneNumber: phone(input.phoneNumber) ?? current.phoneNumber,
     encryptedApiKey: input.clearApiKey === true ? undefined : apiKey ? encrypt(apiKey) : currentStored?.encryptedApiKey,
+    voiceEnabled: typeof input.voiceEnabled === "boolean" ? input.voiceEnabled : current.voiceEnabled,
+    elevenLabsVoiceId: voiceId(input.elevenLabsVoiceId) ?? current.elevenLabsVoiceId,
+    elevenLabsModel: voiceModel(input.elevenLabsModel) ?? current.elevenLabsModel,
+    voiceStability: unitValue(input.voiceStability, "Ses kararlılığı") ?? current.voiceStability,
+    voiceSimilarity: unitValue(input.voiceSimilarity, "Ses benzerliği") ?? current.voiceSimilarity,
+    encryptedElevenLabsApiKey: input.clearElevenLabsApiKey === true
+      ? undefined
+      : elevenLabsApiKey ? encrypt(elevenLabsApiKey) : currentStored?.encryptedElevenLabsApiKey,
     updatedAt: new Date().toISOString(),
   };
   await writeStoredSettings(next);

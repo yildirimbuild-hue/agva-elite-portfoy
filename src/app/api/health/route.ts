@@ -19,6 +19,7 @@ export async function GET() {
     publishedListings = listings.length;
     runtimeServices = {
       deepseek: settings.aiEnabled && Boolean(settings.apiKey),
+      elevenlabs: settings.voiceEnabled && Boolean(settings.elevenLabsApiKey),
       whatsapp: settings.whatsappNumber.length >= 10,
       phone: settings.phoneNumber.length >= 10,
     };

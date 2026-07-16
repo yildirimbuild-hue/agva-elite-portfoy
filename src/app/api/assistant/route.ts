@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCompanyProfile } from "@/lib/company-store";
 import { getListings } from "@/lib/listing-store";
 import { getRuntimeSiteSettings } from "@/lib/site-settings-store";
+import { createVoiceToken } from "@/lib/elevenlabs";
 
 export const dynamic = "force-dynamic";
 
@@ -148,15 +149,18 @@ export async function POST(request: Request) {
   const latestQuestion = messages[messages.length - 1].content;
   const contextReference = typeof body.context?.listingReference === "string" ? body.context.listingReference.toUpperCase() : "";
   const currentListing = listings.find((listing) => listing.reference === contextReference) ?? null;
+  const voiceReady = settings.voiceEnabled && Boolean(settings.elevenLabsApiKey);
   const match = resolvePortfolioMatches(latestQuestion, listings);
   if (match) {
     const actions = match.listings.map(toAction);
+    const answer = match.autoOpen
+      ? openingMessage(match.listings[0], latestQuestion)
+      : `Elbette efendim, isteğinize uyan ${match.listings.length} güzel seçenek buldum. İncelemek istediğiniz ilanı seçebilirsiniz.`;
     return NextResponse.json({
-      answer: match.autoOpen
-        ? openingMessage(match.listings[0], latestQuestion)
-        : `Elbette efendim, isteğinize uyan ${match.listings.length} güzel seçenek buldum. İncelemek istediğiniz ilanı seçebilirsiniz.`,
+      answer,
       actions,
       autoOpen: match.autoOpen,
+      voiceToken: voiceReady ? createVoiceToken(answer) : undefined,
     });
   }
 
@@ -243,7 +247,7 @@ ${settings.assistantInstructions ? `- YÖNETİCİ EK TALİMATI: ${settings.assis
     if (!answer) return NextResponse.json({ error: "Yapay zekâ boş yanıt verdi." }, { status: 502 });
     const actions = actionsFromAnswer(answer, listings);
     const autoOpen = wantsToOpen(latestQuestion) && actions.length === 1 && actions[0].reference !== currentListing?.reference;
-    return NextResponse.json({ answer, actions, autoOpen });
+    return NextResponse.json({ answer, actions, autoOpen, voiceToken: voiceReady ? createVoiceToken(answer) : undefined });
   } catch (error) {
     console.error("DeepSeek request failed", error);
     return NextResponse.json({ error: "Yapay zekâ danışmanı zaman aşımına uğradı." }, { status: 504 });
