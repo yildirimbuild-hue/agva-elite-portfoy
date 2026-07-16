@@ -1,12 +1,13 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
-import type { ListingInput } from "@/lib/types";
+import type { Listing, ListingInput } from "@/lib/types";
 
 type ListingAction = { type: "open_listing"; reference: string; title: string; href: string };
 type AdminDraft = Partial<ListingInput>;
 type AdminMode = "public" | "awaiting_password" | "ready" | "drafting";
-type Message = { role: "user" | "assistant"; content: string; actions?: ListingAction[]; adminDraft?: AdminDraft };
+type AdminTarget = Pick<Listing, "id" | "reference" | "title" | "slug" | "published">;
+type Message = { role: "user" | "assistant"; content: string; actions?: ListingAction[]; adminDraft?: AdminDraft; adminDraftKind?: "create" | "edit"; adminDelete?: AdminTarget };
 type ListingContext = { reference: string; title: string };
 
 const suggestions = [
@@ -27,6 +28,18 @@ function formatDraftPrice(draft: AdminDraft) {
   }).format(draft.price);
 }
 
+function toAdminDraft(source: Listing): AdminDraft {
+  return {
+    title: source.title, purpose: source.purpose, propertyType: source.propertyType,
+    location: source.location, district: source.district, price: source.price,
+    oldPrice: source.oldPrice, currency: source.currency, rooms: source.rooms,
+    bathrooms: source.bathrooms, grossArea: source.grossArea, netArea: source.netArea,
+    landArea: source.landArea, floor: source.floor, description: source.description,
+    features: [...source.features], images: [...source.images], featured: source.featured,
+    urgent: source.urgent, published: source.published, isDemo: false,
+  };
+}
+
 export function AIConcierge({ listing }: { listing?: ListingContext }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -35,6 +48,8 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
   const [redirecting, setRedirecting] = useState(false);
   const [adminMode, setAdminMode] = useState<AdminMode>("public");
   const [adminDraft, setAdminDraft] = useState<AdminDraft | null>(null);
+  const [editingTarget, setEditingTarget] = useState<AdminTarget | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<AdminTarget | null>(null);
   const [savingDraft, setSavingDraft] = useState(false);
   const [error, setError] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -161,7 +176,7 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
       setAdminMode("ready");
       setMessages((current) => [...current, {
         role: "assistant",
-        content: "Yönetici modu güvenli biçimde açıldı. “İlan ekle” yazın; bilgileri konuşarak taslağa dönüştüreyim.",
+        content: "Yönetici modu güvenli biçimde açıldı. Yeni ilan ekleyebilir; bulunduğunuz ilanı düzenleyebilir, fiyatını veya açıklamasını değiştirebilir, fotoğraf ekleyebilir, yayından kaldırabilir ya da silme onayı hazırlayabilirsiniz.",
       }]);
     } catch {
       setError("Yönetici oturumu açılamadı. Lütfen tekrar deneyin.");
@@ -173,26 +188,28 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
   function beginListingDraft() {
     setInput("");
     setAdminDraft(null);
+    setEditingTarget(null);
+    setPendingDelete(null);
     setAdminMode("drafting");
     setMessages((current) => [...current,
       { role: "user", content: "ilan ekle" },
       {
         role: "assistant",
-        content: "Elbette. İlanı doğal bir cümleyle anlatın. Başlık, satılık/kiralık, emlak tipi, bölge ve fiyat zorunlu; oda, m², açıklama, özellikler, eski fiyat ve “çok acil” bilgisini de aynı mesajda yazabilirsiniz.",
+        content: "Elbette. İlanı doğal bir cümleyle anlatın. Başlık, satılık/kiralık, emlak tipi, bölge ve fiyat zorunlu; oda, m², açıklama, özellikler, eski fiyat ve “çok acil” bilgisini de aynı mesajda yazabilirsiniz. Ardından bir veya birden fazla fotoğrafı birlikte yükleyebilirsiniz.",
       },
     ]);
   }
 
-  async function refineListingDraft(instruction: string) {
+  async function refineListingDraft(instruction: string, baseDraft: AdminDraft | null = adminDraft, kind: "create" | "edit" = editingTarget ? "edit" : "create", appendUser = true) {
     setInput("");
     setError("");
     setLoading(true);
-    setMessages((current) => [...current, { role: "user", content: instruction }]);
+    if (appendUser) setMessages((current) => [...current, { role: "user", content: instruction }]);
     try {
       const response = await fetch("/api/admin/assistant/draft", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ instruction, draft: adminDraft }),
+        body: JSON.stringify({ instruction, draft: baseDraft, mode: kind }),
       });
       const payload = await response.json();
       if (response.status === 401) {
@@ -211,11 +228,118 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
         role: "assistant",
         content: payload.answer,
         adminDraft: payload.missing?.length ? undefined : nextDraft,
+        adminDraftKind: kind,
       }]);
     } catch {
       setError("İlan taslağı hazırlanırken bağlantı kurulamadı.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function resolveAdminListing(command: string) {
+    const response = await fetch("/api/admin/listings", { cache: "no-store" });
+    if (response.status === 401) {
+      setAdminMode("awaiting_password");
+      setMessages((current) => [...current, { role: "assistant", content: "Yönetici oturumunuz sona erdi. Devam etmek için şifrenizi tekrar girin." }]);
+      return null;
+    }
+    const records = await response.json();
+    if (!response.ok) throw new Error(records.error ?? "İlanlar alınamadı.");
+    const explicitReference = command.match(/IKS-?\d{4}/i)?.[0]?.toUpperCase().replace("IKS", "IKS-").replace("--", "-");
+    const targetReference = explicitReference ?? listing?.reference;
+    if (!targetReference) return null;
+    return (records as Listing[]).find((item) => item.reference === targetReference) ?? null;
+  }
+
+  async function beginEditingListing(instruction: string) {
+    setInput("");
+    setError("");
+    setLoading(true);
+    setMessages((current) => [...current, { role: "user", content: instruction }]);
+    try {
+      const source = await resolveAdminListing(instruction);
+      if (!source) {
+        setMessages((current) => [...current, { role: "assistant", content: "Düzenlemek istediğiniz ilanın IKS referans numarasını yazın veya ilan sayfasındayken “bu ilanı düzenle” deyin." }]);
+        return;
+      }
+      const target: AdminTarget = { id: source.id, reference: source.reference, title: source.title, slug: source.slug, published: source.published };
+      const draft = toAdminDraft(source);
+      setEditingTarget(target);
+      setPendingDelete(null);
+      setAdminDraft(draft);
+      setAdminMode("drafting");
+      const normalized = normalizeCommand(instruction);
+      const hasSpecificChange = ["fiyat", "baslik", "aciklama", "oda", "banyo", "metrekare", "m2", "bolge", "konum", "ozellik", "acil", "yayin", "kiralik", "satilik"].some((term) => normalized.includes(term)) &&
+        ["degistir", "guncelle", "yap", "kaldir", "ekle", "olsun"].some((term) => normalized.includes(term));
+      if (hasSpecificChange) {
+        await refineListingDraft(instruction, draft, "edit", false);
+      } else {
+        setMessages((current) => [...current, {
+          role: "assistant",
+          content: `${source.reference} numaralı ilanı düzenlemeye açtım. Fiyat, başlık, açıklama, konum, alan, özellikler, etiketler veya yayın durumu dahil değiştirmek istediğiniz her şeyi yazabilirsiniz. Fotoğraf eklemek için karttaki çoklu yükleme alanını kullanın.`,
+          adminDraft: draft,
+          adminDraftKind: "edit",
+        }]);
+      }
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "İlan düzenlemeye açılamadı.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function requestListingDelete(instruction: string) {
+    setInput("");
+    setError("");
+    setLoading(true);
+    setMessages((current) => [...current, { role: "user", content: instruction }]);
+    try {
+      const source = await resolveAdminListing(instruction);
+      if (!source) {
+        setMessages((current) => [...current, { role: "assistant", content: "Silmek istediğiniz ilanın IKS referans numarasını yazın veya ilgili ilan sayfasında bu komutu kullanın." }]);
+        return;
+      }
+      const target: AdminTarget = { id: source.id, reference: source.reference, title: source.title, slug: source.slug, published: source.published };
+      setPendingDelete(target);
+      setMessages((current) => [...current, {
+        role: "assistant",
+        content: "Bu işlem kalıcıdır. Silmeden önce doğru ilanı kontrol edin.",
+        adminDelete: target,
+      }]);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Silme onayı hazırlanamadı.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function deleteAdminListing(target: AdminTarget) {
+    if (pendingDelete?.id !== target.id) return;
+    setSavingDraft(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/admin/listings/${target.id}`, { method: "DELETE" });
+      const payload = await response.json();
+      if (response.status === 401) {
+        setAdminMode("awaiting_password");
+        setMessages((current) => [...current, { role: "assistant", content: "Oturumunuz sona erdi. Silme işlemi yapılmadı; devam etmek için şifrenizi tekrar girin." }]);
+        return;
+      }
+      if (!response.ok) {
+        setError(payload.error ?? "İlan silinemedi.");
+        return;
+      }
+      setPendingDelete(null);
+      setMessages((current) => [...current, { role: "assistant", content: `${target.reference} numaralı “${target.title}” ilanı kalıcı olarak silindi.` }]);
+      if (listing?.reference === target.reference) {
+        setRedirecting(true);
+        redirectTimerRef.current = window.setTimeout(() => window.location.assign("/"), 1600);
+      }
+    } catch {
+      setError("İlan silinirken bağlantı kurulamadı.");
+    } finally {
+      setSavingDraft(false);
     }
   }
 
@@ -227,8 +351,9 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
     setSavingDraft(true);
     setError("");
     try {
-      const response = await fetch("/api/admin/listings", {
-        method: "POST",
+      const target = editingTarget;
+      const response = await fetch(target ? `/api/admin/listings/${target.id}` : "/api/admin/listings", {
+        method: target ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...draft, published, isDemo: false }),
       });
@@ -244,11 +369,14 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
       }
       setAdminMode("ready");
       setAdminDraft(null);
+      setEditingTarget(null);
       setMessages((current) => [...current, {
         role: "assistant",
-        content: published
-          ? `${payload.reference} numaralı ilan başarıyla yayınlandı.`
-          : `${payload.reference} numaralı ilan taslak olarak kaydedildi.`,
+        content: target
+          ? `${payload.reference} numaralı ilan başarıyla güncellendi${published ? " ve yayında" : " ve taslakta"}.`
+          : published
+            ? `${payload.reference} numaralı ilan başarıyla yayınlandı.`
+            : `${payload.reference} numaralı ilan taslak olarak kaydedildi.`,
         actions: published ? [{ type: "open_listing", reference: payload.reference, title: payload.title, href: `/ilan/${payload.slug}` }] : undefined,
       }]);
     } catch {
@@ -286,7 +414,7 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
       setAdminDraft(nextDraft);
       setMessages((current) => [...current.map((message) => message.adminDraft === draft ? { ...message, adminDraft: nextDraft } : message), {
         role: "assistant",
-        content: `${uploaded.length} görsel ilan taslağına eklendi.`,
+        content: `${uploaded.length} yeni görsel eklendi. İlanda toplam ${nextDraft.images?.length ?? 0} görsel var; ilk görsel kapak olarak kullanılır.`,
       }]);
     } catch {
       setError("Görseller yüklenirken bağlantı kurulamadı.");
@@ -295,16 +423,33 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
     }
   }
 
+  function updateDraftImages(draft: AdminDraft, images: string[]) {
+    const nextDraft = { ...draft, images };
+    setAdminDraft(nextDraft);
+    setMessages((current) => current.map((message) => message.adminDraft === draft ? { ...message, adminDraft: nextDraft } : message));
+  }
+
+  function makeDraftCover(draft: AdminDraft, image: string) {
+    updateDraftImages(draft, [image, ...(draft.images ?? []).filter((item) => item !== image)]);
+  }
+
+  function removeDraftImage(draft: AdminDraft, image: string) {
+    updateDraftImages(draft, (draft.images ?? []).filter((item) => item !== image));
+  }
+
   function cancelListingDraft() {
     setAdminDraft(null);
+    setEditingTarget(null);
     setAdminMode("ready");
-    setMessages((current) => [...current, { role: "assistant", content: "İlan taslağını iptal ettim. Herhangi bir kayıt yapılmadı." }]);
+    setMessages((current) => [...current, { role: "assistant", content: "İşlemi iptal ettim. Herhangi bir kayıt veya değişiklik yapılmadı." }]);
   }
 
   async function leaveAdminMode() {
     await fetch("/api/admin/logout", { method: "POST" }).catch(() => null);
     setAdminMode("public");
     setAdminDraft(null);
+    setEditingTarget(null);
+    setPendingDelete(null);
     setMessages([{ role: "assistant", content: "Yönetici oturumu güvenli biçimde kapatıldı." }]);
   }
 
@@ -333,6 +478,27 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
     }
     if (adminMode === "ready" && (command.includes("ilan ekle") || command.includes("portfoy ekle") || command.includes("yeni ilan"))) {
       beginListingDraft();
+      return;
+    }
+    if (adminMode === "ready" && pendingDelete && (command === "iptal" || command === "vazgec")) {
+      setInput("");
+      setPendingDelete(null);
+      setMessages((current) => [...current, { role: "assistant", content: "Silme işlemini iptal ettim; ilan korunuyor." }]);
+      return;
+    }
+    const hasListingReference = /IKS-?\d{4}/i.test(question);
+    const fieldRemoval = ["foto", "gorsel", "resim", "aciklama", "ozellik", "etiket"].some((term) => command.includes(term));
+    const deleteRequest = (command.includes("sil") || command.includes("kalici kaldir")) &&
+      (command.includes("ilan") || command.includes("portfoy") || hasListingReference || Boolean(listing)) &&
+      !command.includes("yayindan") && !fieldRemoval;
+    if (adminMode === "ready" && deleteRequest) {
+      await requestListingDelete(question);
+      return;
+    }
+    const editVerb = ["duzenle", "degistir", "guncelle", "yap", "ekle", "kaldir", "sil"].some((term) => command.includes(term));
+    const editSubject = ["ilan", "portfoy", "fiyat", "baslik", "aciklama", "foto", "gorsel", "oda", "banyo", "metrekare", "konum", "bolge", "ozellik", "acil", "yayin"].some((term) => command.includes(term));
+    if (adminMode === "ready" && editVerb && editSubject && (hasListingReference || Boolean(listing))) {
+      await beginEditingListing(question);
       return;
     }
     if (adminMode === "drafting") {
@@ -398,28 +564,35 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
                 {message.content}
                 {message.actions && message.actions.length > 0 && <div className="ai-listing-actions">{message.actions.map((action) => <a href={action.href} key={action.reference}><span>{action.reference}</span><strong>{action.title}</strong><em>İlanı aç →</em></a>)}</div>}
                 {message.adminDraft && <div className="ai-admin-draft">
-                  <div className="ai-admin-draft-title"><span>YENİ İLAN TASLAĞI</span><strong>{message.adminDraft.title}</strong></div>
+                  <div className="ai-admin-draft-title"><span>{message.adminDraftKind === "edit" ? `${editingTarget?.reference ?? "İLAN"} · DEĞİŞİKLİK TASLAĞI` : "YENİ İLAN TASLAĞI"}</span><strong>{message.adminDraft.title}</strong></div>
                   <dl>
                     <div><dt>İşlem</dt><dd>{message.adminDraft.purpose}</dd></div>
                     <div><dt>Tür</dt><dd>{message.adminDraft.propertyType}</dd></div>
                     <div><dt>Bölge</dt><dd>{message.adminDraft.location}</dd></div>
                     <div><dt>Fiyat</dt><dd>{formatDraftPrice(message.adminDraft)}</dd></div>
-                    {(message.adminDraft.rooms || message.adminDraft.grossArea) && <div><dt>Detay</dt><dd>{[message.adminDraft.rooms, message.adminDraft.grossArea ? `${message.adminDraft.grossArea} brüt m²` : ""].filter(Boolean).join(" · ")}</dd></div>}
+                    {Boolean(message.adminDraft.oldPrice) && <div><dt>Eski fiyat</dt><dd>{new Intl.NumberFormat("tr-TR").format(message.adminDraft.oldPrice!)} {message.adminDraft.currency ?? "TRY"}</dd></div>}
+                    <div><dt>Yayın</dt><dd>{message.adminDraft.published ? "Yayında" : "Taslak"}</dd></div>
+                    {(message.adminDraft.rooms || message.adminDraft.bathrooms) && <div><dt>Oda / banyo</dt><dd>{[message.adminDraft.rooms, message.adminDraft.bathrooms ? `${message.adminDraft.bathrooms} banyo` : ""].filter(Boolean).join(" · ")}</dd></div>}
+                    {(message.adminDraft.grossArea || message.adminDraft.netArea || message.adminDraft.landArea) && <div><dt>Alanlar</dt><dd>{[message.adminDraft.grossArea ? `${message.adminDraft.grossArea} brüt` : "", message.adminDraft.netArea ? `${message.adminDraft.netArea} net` : "", message.adminDraft.landArea ? `${message.adminDraft.landArea} arsa` : ""].filter(Boolean).join(" · ")} m²</dd></div>}
+                    {message.adminDraft.floor && <div><dt>Kat</dt><dd>{message.adminDraft.floor}</dd></div>}
                     {message.adminDraft.urgent && <div><dt>Etiket</dt><dd>Çok acil</dd></div>}
                   </dl>
                   {message.adminDraft.description && <p>{message.adminDraft.description}</p>}
-                  {message.adminDraft.images && message.adminDraft.images.length > 0 && <div className="ai-admin-draft-images">{message.adminDraft.images.map((image) => <img src={image} alt="İlan taslağı" key={image} />)}</div>}
+                  {message.adminDraft.features && message.adminDraft.features.length > 0 && <div className="ai-admin-draft-features">{message.adminDraft.features.join(" · ")}</div>}
+                  {message.adminDraft.images && message.adminDraft.images.length > 0 && <div className="ai-admin-draft-images">{message.adminDraft.images.map((image, imageIndex) => <div key={`${image}-${imageIndex}`}><span>{imageIndex === 0 ? "Kapak" : imageIndex + 1}</span><img src={image} alt={`İlan taslağı ${imageIndex + 1}`} />{message.adminDraft === adminDraft && <div><button type="button" disabled={imageIndex === 0 || savingDraft} onClick={() => makeDraftCover(message.adminDraft!, image)}>Kapak</button><button type="button" disabled={savingDraft} onClick={() => removeDraftImage(message.adminDraft!, image)}>Sil</button></div>}</div>)}</div>}
                   <small>{message.adminDraft.images?.length ? "Düzeltmek istediğiniz bilgiyi mesaj olarak yazabilirsiniz." : "Fotoğrafsız ilan yayınlanamaz; isterseniz fotoğrafsız taslak kaydedebilirsiniz."}</small>
                   {message.adminDraft === adminDraft && <label className={`ai-admin-upload ${message.adminDraft.images?.length ? "has-images" : "required"}`}>
                     <input type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={savingDraft} onChange={(event) => void uploadDraftImages(event, message.adminDraft!)} />
-                    <span>＋</span><div><strong>{message.adminDraft.images?.length ? "Başka fotoğraf ekle" : "Fotoğraf yükle"}</strong><small>JPG, PNG veya WebP · Görsel başına en fazla 8 MB</small></div>
+                    <span>＋</span><div><strong>{message.adminDraft.images?.length ? "Bir veya daha fazla fotoğraf ekle" : "Bir veya daha fazla fotoğraf yükle"}</strong><small>Birlikte çoklu seçim yapabilirsiniz · JPG, PNG veya WebP · En fazla 8 MB</small></div>
                   </label>}
                   {message.adminDraft === adminDraft && <div className="ai-admin-draft-actions">
-                    <button type="button" disabled={savingDraft} onClick={() => void saveListingDraft(message.adminDraft!, false)}>Taslak kaydet</button>
-                    <button type="button" disabled={savingDraft || !message.adminDraft.images?.length} onClick={() => void saveListingDraft(message.adminDraft!, true)}>Hemen yayınla</button>
+                    {message.adminDraftKind === "edit"
+                      ? <><button type="button" disabled={savingDraft || Boolean(message.adminDraft.published && !message.adminDraft.images?.length)} onClick={() => void saveListingDraft(message.adminDraft!, Boolean(message.adminDraft!.published))}>Değişiklikleri kaydet</button><button type="button" disabled={savingDraft || Boolean(!message.adminDraft.published && !message.adminDraft.images?.length)} onClick={() => void saveListingDraft(message.adminDraft!, !message.adminDraft!.published)}>{message.adminDraft.published ? "Yayından kaldır" : "Yayınla"}</button></>
+                      : <><button type="button" disabled={savingDraft} onClick={() => void saveListingDraft(message.adminDraft!, false)}>Taslak kaydet</button><button type="button" disabled={savingDraft || !message.adminDraft.images?.length} onClick={() => void saveListingDraft(message.adminDraft!, true)}>Hemen yayınla</button></>}
                     <button type="button" disabled={savingDraft} onClick={cancelListingDraft}>İptal</button>
                   </div>}
                 </div>}
+                {message.adminDelete && <div className="ai-admin-delete-card"><span>KALICI SİLME ONAYI</span><strong>{message.adminDelete.reference} · {message.adminDelete.title}</strong><p>İlan ve portföy kaydı kalıcı olarak silinecek. Bu işlem geri alınamaz.</p>{pendingDelete?.id === message.adminDelete.id && <div><button type="button" disabled={savingDraft} onClick={() => void deleteAdminListing(message.adminDelete!)}>Evet, kalıcı sil</button><button type="button" disabled={savingDraft} onClick={() => { setPendingDelete(null); setMessages((current) => [...current, { role: "assistant", content: "Silme işlemi iptal edildi; ilan korunuyor." }]); }}>Vazgeç</button></div>}</div>}
               </div>
             ))}
             {loading && <div className="ai-message assistant typing"><i /><i /><i /></div>}
@@ -428,7 +601,7 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
             <div ref={messagesEndRef} />
           </div>
           {messages.length === 0 && <div className="ai-suggestions">{contextualSuggestions.map((item) => <button type="button" key={item} onClick={() => void ask(item)}>{item}</button>)}</div>}
-          {adminMode === "ready" && <div className="ai-suggestions ai-admin-actions"><button type="button" onClick={beginListingDraft}>+ Yeni ilan ekle</button><button type="button" onClick={() => void leaveAdminMode()}>Oturumu kapat</button></div>}
+          {adminMode === "ready" && <div className="ai-suggestions ai-admin-actions"><button type="button" onClick={beginListingDraft}>+ Yeni ilan ekle</button>{listing && <button type="button" onClick={() => void beginEditingListing("bu ilanı düzenle")}>Bu ilanı düzenle</button>}{listing && <button className="danger" type="button" onClick={() => void requestListingDelete("bu ilanı sil")}>Bu ilanı sil</button>}<button type="button" onClick={() => void leaveAdminMode()}>Oturumu kapat</button></div>}
           <form onSubmit={submit}>
             <input
               type={adminMode === "awaiting_password" ? "password" : "text"}

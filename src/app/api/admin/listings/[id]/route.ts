@@ -11,8 +11,13 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
   if (!existing) return NextResponse.json({ error: "İlan bulunamadı." }, { status: 404 });
   const nextPrice = input.price ?? existing.price;
   const nextOldPrice = input.oldPrice ?? existing.oldPrice;
+  const nextPublished = input.published ?? existing.published;
+  const nextImages = input.images ?? existing.images;
   if (nextOldPrice > 0 && nextOldPrice <= nextPrice) {
     return NextResponse.json({ error: "Eski fiyat yeni fiyattan yüksek olmalıdır." }, { status: 400 });
+  }
+  if (nextPublished && nextImages.length === 0) {
+    return NextResponse.json({ error: "İlanı yayında tutmak için en az bir görsel ekleyin." }, { status: 400 });
   }
   let updated: Awaited<ReturnType<typeof updateListing>>;
   try {

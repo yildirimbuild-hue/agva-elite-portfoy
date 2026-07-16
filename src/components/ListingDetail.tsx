@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { AIConcierge } from "@/components/AIConcierge";
 import type { CompanyProfile, Listing } from "@/lib/types";
 
@@ -10,6 +11,9 @@ const formatMoney = (amount: number, currency: Listing["currency"]) => new Intl.
 }).format(amount);
 
 export function ListingDetail({ listing, company }: { listing: Listing; company: CompanyProfile }) {
+  const [selectedImage, setSelectedImage] = useState(0);
+  const imageCount = listing.images.length;
+  const moveImage = (direction: number) => setSelectedImage((current) => (current + direction + imageCount) % imageCount);
   const whatsappDigits = company.whatsappNumber.replace(/\D/g, "");
   const phoneNumber = company.phoneNumber.trim();
   const contactMissing = () => window.alert("Firma iletişim numarası henüz yönetim ayarlarına eklenmedi.");
@@ -32,9 +36,17 @@ export function ListingDetail({ listing, company }: { listing: Listing; company:
       <main className="listing-detail-page">
         <section className="listing-detail-hero">
           <div className="listing-detail-visual">
-            {listing.images[0]
-              ? <img src={listing.images[0]} alt={listing.title} />
+            {listing.images[selectedImage]
+              ? <img src={listing.images[selectedImage]} alt={`${listing.title} · Görsel ${selectedImage + 1}`} />
               : <div className="listing-image-empty detail-empty-image"><span>İKİSU</span><strong>Bu ilana henüz fotoğraf eklenmedi.</strong><small>Görseller portföy yöneticisi tarafından yakında eklenecek.</small></div>}
+            {imageCount > 1 && <>
+              <button className="listing-gallery-arrow previous" type="button" onClick={() => moveImage(-1)} aria-label="Önceki görsel">‹</button>
+              <button className="listing-gallery-arrow next" type="button" onClick={() => moveImage(1)} aria-label="Sonraki görsel">›</button>
+              <div className="listing-gallery-count">{selectedImage + 1} / {imageCount}</div>
+              <div className="listing-gallery-thumbs" aria-label="İlan görselleri">
+                {listing.images.map((image, index) => <button className={index === selectedImage ? "active" : ""} type="button" onClick={() => setSelectedImage(index)} key={`${image}-${index}`} aria-label={`${index + 1}. görseli aç`}><img src={image} alt="" /></button>)}
+              </div>
+            </>}
             <div className="property-badges">
               {listing.urgent && <span className="badge-urgent">Çok acil</span>}
               {discount > 0 && <span className="badge-discount">%{discount} fiyat düştü</span>}

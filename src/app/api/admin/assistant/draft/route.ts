@@ -62,7 +62,7 @@ function sanitize(value: unknown): ListingDraft {
     grossArea: number(source.grossArea), netArea: number(source.netArea), landArea: number(source.landArea),
     floor: text(source.floor, 50), description: text(source.description, 2400),
     features: stringList(source.features, 30, 100), images: stringList(source.images, 15, 500),
-    featured: boolean(source.featured), urgent: boolean(source.urgent),
+    featured: boolean(source.featured), urgent: boolean(source.urgent), published: boolean(source.published),
   }).filter(([, item]) => item !== undefined));
 }
 
@@ -83,7 +83,7 @@ function parseJson(content: string) {
 
 export async function POST(request: Request) {
   if (!(await isAdminAuthenticated())) return NextResponse.json({ error: "Yetkisiz." }, { status: 401 });
-  const body = (await request.json().catch(() => null)) as { instruction?: unknown; draft?: unknown } | null;
+  const body = (await request.json().catch(() => null)) as { instruction?: unknown; draft?: unknown; mode?: unknown } | null;
   const instruction = text(body?.instruction, 3000);
   if (!instruction) return NextResponse.json({ error: "İlan bilgisi gönderin." }, { status: 400 });
 
@@ -91,8 +91,9 @@ export async function POST(request: Request) {
   if (!apiKey) return NextResponse.json({ error: "DeepSeek API anahtarı yapılandırılmadı." }, { status: 503 });
 
   const currentDraft = { ...optionalDefaults, ...sanitize(body?.draft) };
+  const editing = body?.mode === "edit";
   const systemPrompt = `Türkçe emlak ilanı metnini yalnızca JSON nesnesine dönüştüren bir veri yardımcısısın.
-Geçerli alanlar: title, purpose, propertyType, location, district, price, oldPrice, currency, rooms, bathrooms, grossArea, netArea, landArea, floor, description, features, images, featured, urgent.
+Geçerli alanlar: title, purpose, propertyType, location, district, price, oldPrice, currency, rooms, bathrooms, grossArea, netArea, landArea, floor, description, features, images, featured, urgent, published.
 purpose yalnız "Satılık" veya "Kiralık"; propertyType yalnız "Villa", "Müstakil Ev", "Daire", "Arsa", "Ticari"; currency yalnız "TRY", "USD", "EUR" olabilir.
 "milyon" ve "bin" ifadelerini tam sayıya çevir. Kullanıcının vermediği önemli bilgileri uydurma; mevcut taslaktaki bilgileri koru. Son talimat mevcut taslaktaki bir alanı düzeltiyorsa düzelt.
 Yalnız tek bir geçerli JSON nesnesi döndür; açıklama veya markdown yazma.`;
@@ -126,10 +127,11 @@ Yalnız tek bir geçerli JSON nesnesi döndür; açıklama veya markdown yazma.`
     const content = payload?.choices?.[0]?.message?.content;
     if (!content) return NextResponse.json({ error: "İlan taslağı boş döndü." }, { status: 502 });
 
+    const parsedDraft = sanitize(parseJson(content));
     const draft: ListingDraft = {
       ...currentDraft,
-      ...sanitize(parseJson(content)),
-      published: false,
+      ...parsedDraft,
+      published: editing ? (parsedDraft.published ?? currentDraft.published ?? false) : false,
       isDemo: false,
     };
     if ((draft.oldPrice ?? 0) > 0 && (draft.oldPrice ?? 0) <= (draft.price ?? 0)) draft.oldPrice = 0;
@@ -140,8 +142,12 @@ Yalnız tek bir geçerli JSON nesnesi döndür; açıklama veya markdown yazma.`
       answer: missing.length
         ? `Taslağı hazırlıyorum. Şu bilgileri de yazar mısınız: ${missing.join(", ")}?`
         : draft.images?.length
-          ? "İlan taslağını hazırladım. Bilgileri ve fotoğrafları kontrol edip taslak olarak kaydedebilir veya hemen yayınlayabilirsiniz."
-          : "İlan taslağını hazırladım. Yayınlamak için aşağıdaki belirgin alandan en az bir gerçek fotoğraf yükleyin; isterseniz fotoğrafsız taslak olarak da kaydedebilirsiniz.",
+          ? editing
+            ? "İlan değişiklik taslağını hazırladım. Tüm bilgileri ve fotoğrafları kontrol edip değişiklikleri onaylayabilirsiniz."
+            : "İlan taslağını hazırladım. Bilgileri kontrol edin; aşağıdaki alandan bir veya birden fazla fotoğraf daha ekleyebilirsiniz."
+          : editing
+            ? "Değişiklik taslağını hazırladım. İlanı yayında tutmak için en az bir fotoğraf yükleyin; fotoğrafsız olarak taslağa alabilirsiniz."
+            : "İlan taslağını hazırladım. Yayınlamak için aşağıdaki belirgin alandan bir veya birden fazla gerçek fotoğraf yükleyin; fotoğrafsız taslak da kaydedebilirsiniz.",
     });
   } catch (error) {
     console.error("DeepSeek admin draft failed", error);

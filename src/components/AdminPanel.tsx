@@ -84,7 +84,11 @@ export function AdminPanel({ initialListings }: { initialListings: Listing[] }) 
       uploaded.push(payload.url);
     }
     updateField("images", [...form.images, ...uploaded]);
-    setMessage(`${uploaded.length} görsel yüklendi.`);
+    setMessage(`${uploaded.length} görsel yüklendi. Toplam ${form.images.length + uploaded.length} görsel; ilk görsel kapak olarak kullanılacak.`);
+  }
+
+  function makeCover(image: string) {
+    updateField("images", [image, ...form.images.filter((item) => item !== image)]);
   }
 
   async function save(event: FormEvent) {
@@ -96,6 +100,11 @@ export function AdminPanel({ initialListings }: { initialListings: Listing[] }) 
       features: featuresText.split(",").map((item) => item.trim()).filter(Boolean),
       images: imageUrl.trim() ? [...form.images, imageUrl.trim()] : form.images,
     };
+    if (payload.published && payload.images.length === 0) {
+      setMessage("İlanı yayınlamak için en az bir görsel ekleyin. Fotoğrafsız olarak taslak kaydedebilirsiniz.");
+      setSaving(false);
+      return;
+    }
     const response = await fetch(editingId ? `/api/admin/listings/${editingId}` : "/api/admin/listings", {
       method: editingId ? "PUT" : "POST",
       headers: { "Content-Type": "application/json" },
@@ -123,6 +132,10 @@ export function AdminPanel({ initialListings }: { initialListings: Listing[] }) 
   }
 
   async function togglePublished(listing: Listing) {
+    if (!listing.published && listing.images.length === 0) {
+      setMessage("Bu ilanı yayınlamak için önce en az bir görsel ekleyin.");
+      return;
+    }
     const response = await fetch(`/api/admin/listings/${listing.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -212,8 +225,8 @@ export function AdminPanel({ initialListings }: { initialListings: Listing[] }) 
               <label className="span-2"><span>Açıklama</span><textarea rows={5} value={form.description} onChange={(event) => updateField("description", event.target.value)} /></label>
               <label className="span-2"><span>Özellikler — virgülle ayırın</span><input value={featuresText} onChange={(event) => setFeaturesText(event.target.value)} placeholder="Şömine, nehir manzarası, otopark" /></label>
               <label className="span-2"><span>Görsel URL</span><input value={imageUrl} onChange={(event) => setImageUrl(event.target.value)} placeholder="https://... veya /uploads/..." /></label>
-              <label className="span-2 upload-field"><span>Bilgisayardan görsel yükle</span><input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={uploadImages} /><small>JPG, PNG veya WebP · Görsel başına en fazla 8 MB</small></label>
-              {form.images.length > 0 && <div className="admin-image-previews span-2">{form.images.map((image) => <div key={image}><img src={image} alt="Yüklenen ilan" /><button type="button" onClick={() => updateField("images", form.images.filter((item) => item !== image))}>×</button></div>)}</div>}
+              <label className="span-2 upload-field"><span>Bir veya birden fazla görsel yükle</span><input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={uploadImages} /><small>Birden fazla dosyayı birlikte seçebilirsiniz · JPG, PNG veya WebP · Görsel başına en fazla 8 MB · İlk görsel kapak olur</small></label>
+              {form.images.length > 0 && <div className="admin-image-previews span-2">{form.images.map((image, index) => <div key={`${image}-${index}`}><span>{index === 0 ? "Kapak" : index + 1}</span><img src={image} alt={`İlan görseli ${index + 1}`} /><div><button type="button" disabled={index === 0} onClick={() => makeCover(image)}>Kapak yap</button><button type="button" onClick={() => updateField("images", form.images.filter((item) => item !== image))}>Sil</button></div></div>)}</div>}
               <label className="check-field"><input type="checkbox" checked={form.featured} onChange={(event) => updateField("featured", event.target.checked)} /><span>Öne çıkar</span></label>
               <label className="check-field urgent-check"><input type="checkbox" checked={form.urgent} onChange={(event) => updateField("urgent", event.target.checked)} /><span>Çok acil etiketi</span></label>
               <label className="check-field"><input type="checkbox" checked={form.published} onChange={(event) => updateField("published", event.target.checked)} /><span>Hemen yayınla</span></label>

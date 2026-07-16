@@ -19,6 +19,9 @@ export async function POST(request: Request) {
   if (input.oldPrice > 0 && input.oldPrice <= input.price) {
     return NextResponse.json({ error: "Eski fiyat yeni fiyattan yüksek olmalıdır." }, { status: 400 });
   }
+  if (input.published && (!Array.isArray(input.images) || input.images.length === 0)) {
+    return NextResponse.json({ error: "İlanı yayınlamak için en az bir görsel ekleyin." }, { status: 400 });
+  }
   try {
     return NextResponse.json(await createListing(input), { status: 201 });
   } catch (error) {
