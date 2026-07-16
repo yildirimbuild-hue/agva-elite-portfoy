@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AIConcierge } from "@/components/AIConcierge";
-import { DemoWelcome } from "@/components/DemoWelcome";
 import type { CompanyProfile, Listing } from "@/lib/types";
 
 const formatMoney = (amount: number, currency: Listing["currency"]) =>
@@ -81,7 +80,6 @@ export default function PortfolioApp({ listings, company }: { listings: Listing[
 
   return (
     <>
-      <DemoWelcome listingCount={listings.length} />
       <header className="catalog-header">
         <a className="brand catalog-brand" href="#top" aria-label="İKİSU ana sayfa">
           <span className="brand-mark">İK</span>
@@ -92,7 +90,6 @@ export default function PortfolioApp({ listings, company }: { listings: Listing[
           <button type="button" onClick={() => selectPurpose("Kiralık")}>Kiralık</button>
           <button type="button" onClick={() => { setPropertyType("Arsa"); selectPurpose("Tümü"); }}>Arsa</button>
           <a href="#portfoy" onClick={() => setMenuOpen(false)}>Tüm portföy</a>
-          <button type="button" onClick={() => { setMenuOpen(false); window.dispatchEvent(new Event("ikisu:open-demo")); }}>Demo özellikleri</button>
           <a className="admin-nav-link" href="/admin">Admin paneli</a>
         </nav>
         {whatsappDigits ? <a className="header-contact" href={whatsappHref()} target="_blank" rel="noreferrer">WhatsApp</a> : <button className="header-contact" type="button" onClick={contactMissing}>WhatsApp</button>}

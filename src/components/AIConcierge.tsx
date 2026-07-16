@@ -139,12 +139,6 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
   }, []);
 
   useEffect(() => {
-    const openFromDemo = () => handlePanel(true);
-    window.addEventListener("ikisu:open-ai", openFromDemo);
-    return () => window.removeEventListener("ikisu:open-ai", openFromDemo);
-  }, [listing]);
-
-  useEffect(() => {
     if (!listing) return;
     const storageKey = `ikisu-ai-offer:${listing.reference}`;
     try {
