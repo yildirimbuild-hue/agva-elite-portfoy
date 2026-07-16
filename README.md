@@ -47,9 +47,9 @@ kimliklerini build öncesinde engeller.
 
 ## Yayın
 
-`.github/workflows/deploy-pages.yml`, `main` dalına gönderilen her değişiklikte
-statik siteyi oluşturur. GitHub deposunda **Settings → Pages → Source** alanı
-`GitHub Actions` olarak seçilmelidir.
+`npm run build` GitHub Pages ile uyumlu statik çıktıyı `out/` klasöründe üretir.
+GitHub Actions üzerinden otomatik yayın eklenecekse CLI oturumunda `workflow`
+yetkisi bulunmalı ve Pages kaynağı `GitHub Actions` olarak seçilmelidir.
 
 ## Kaynak disiplini
 
