@@ -128,24 +128,16 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
     setLoading(true);
     setMessages([{ role: "user", content: "admin" }]);
     try {
-      const response = await fetch("/api/admin/session", { cache: "no-store" });
-      const payload = await response.json();
-      if (payload.authenticated) {
-        setAdminMode("ready");
-        setMessages((current) => [...current, {
-          role: "assistant",
-          content: "Güvenli yönetici oturumunuz açık. Yeni bir portföy hazırlamak için “ilan ekle” yazabilirsiniz.",
-        }]);
-      } else {
-        setAdminMode("awaiting_password");
-        setMessages((current) => [...current, {
-          role: "assistant",
-          content: "Yönetici modunu açmak için lütfen admin şifrenizi girin. Şifreniz sohbet geçmişine veya yapay zekâ modeline gönderilmez.",
-        }]);
-      }
-    } catch {
+      const response = await fetch("/api/admin/logout", { method: "POST" });
+      if (!response.ok) throw new Error("Oturum sıfırlanamadı.");
       setAdminMode("awaiting_password");
-      setMessages((current) => [...current, { role: "assistant", content: "Lütfen admin şifrenizi girin." }]);
+      setMessages((current) => [...current, {
+        role: "assistant",
+        content: "Yönetici modunu açmak için lütfen admin şifrenizi girin. Şifreniz sohbet geçmişine veya yapay zekâ modeline gönderilmez.",
+      }]);
+    } catch {
+      setAdminMode("public");
+      setError("Güvenli yönetici girişi hazırlanamadı. Lütfen tekrar deneyin.");
     } finally {
       setLoading(false);
     }
@@ -228,6 +220,10 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
   }
 
   async function saveListingDraft(draft: AdminDraft, published: boolean) {
+    if (published && !(draft.images?.length)) {
+      setError("İlanı yayınlamak için en az bir gerçek fotoğraf yükleyin. Fotoğrafsız olarak yalnız taslak kaydedebilirsiniz.");
+      return;
+    }
     setSavingDraft(true);
     setError("");
     try {
@@ -413,11 +409,14 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
                   </dl>
                   {message.adminDraft.description && <p>{message.adminDraft.description}</p>}
                   {message.adminDraft.images && message.adminDraft.images.length > 0 && <div className="ai-admin-draft-images">{message.adminDraft.images.map((image) => <img src={image} alt="İlan taslağı" key={image} />)}</div>}
-                  <small>Düzeltmek istediğiniz bilgiyi mesaj olarak yazabilirsiniz.</small>
+                  <small>{message.adminDraft.images?.length ? "Düzeltmek istediğiniz bilgiyi mesaj olarak yazabilirsiniz." : "Fotoğrafsız ilan yayınlanamaz; isterseniz fotoğrafsız taslak kaydedebilirsiniz."}</small>
+                  {message.adminDraft === adminDraft && <label className={`ai-admin-upload ${message.adminDraft.images?.length ? "has-images" : "required"}`}>
+                    <input type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={savingDraft} onChange={(event) => void uploadDraftImages(event, message.adminDraft!)} />
+                    <span>＋</span><div><strong>{message.adminDraft.images?.length ? "Başka fotoğraf ekle" : "Fotoğraf yükle"}</strong><small>JPG, PNG veya WebP · Görsel başına en fazla 8 MB</small></div>
+                  </label>}
                   {message.adminDraft === adminDraft && <div className="ai-admin-draft-actions">
-                    <label><input type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={savingDraft} onChange={(event) => void uploadDraftImages(event, message.adminDraft!)} />Fotoğraf ekle</label>
                     <button type="button" disabled={savingDraft} onClick={() => void saveListingDraft(message.adminDraft!, false)}>Taslak kaydet</button>
-                    <button type="button" disabled={savingDraft} onClick={() => void saveListingDraft(message.adminDraft!, true)}>Hemen yayınla</button>
+                    <button type="button" disabled={savingDraft || !message.adminDraft.images?.length} onClick={() => void saveListingDraft(message.adminDraft!, true)}>Hemen yayınla</button>
                     <button type="button" disabled={savingDraft} onClick={cancelListingDraft}>İptal</button>
                   </div>}
                 </div>}

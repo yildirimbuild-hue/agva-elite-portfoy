@@ -177,7 +177,7 @@ export function AdminPanel({ initialListings }: { initialListings: Listing[] }) 
             <thead><tr><th>İlan</th><th>Tür</th><th>Fiyat</th><th>Durum</th><th>Güncelleme</th><th /></tr></thead>
             <tbody>{filtered.map((listing) => (
               <tr key={listing.id}>
-                <td><div className="admin-listing-cell"><img src={listing.images[0] || "/images/forest-house.webp"} alt="" /><div><strong>{listing.title}</strong><span>{listing.reference} · {listing.location}</span></div></div></td>
+                <td><div className="admin-listing-cell">{listing.images[0] ? <img src={listing.images[0]} alt="" /> : <span className="admin-listing-no-image">Fotoğraf yok</span>}<div><strong>{listing.title}</strong><span>{listing.reference} · {listing.location}</span></div></div></td>
                 <td><strong>{listing.purpose}</strong><span>{listing.propertyType}</span></td>
                 <td><div className="admin-price-cell">{listing.oldPrice > listing.price && <del>{new Intl.NumberFormat("tr-TR").format(listing.oldPrice)} TL</del>}<strong>{formatPrice(listing)}</strong>{listing.urgent && <span className="admin-urgent-pill">Çok acil</span>}</div></td>
                 <td><button className={listing.published ? "status-pill published" : "status-pill"} type="button" onClick={() => togglePublished(listing)}>{listing.published ? "Yayında" : "Taslak"}</button></td>

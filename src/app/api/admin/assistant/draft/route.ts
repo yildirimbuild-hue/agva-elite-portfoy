@@ -139,7 +139,9 @@ Yalnız tek bir geçerli JSON nesnesi döndür; açıklama veya markdown yazma.`
       missing,
       answer: missing.length
         ? `Taslağı hazırlıyorum. Şu bilgileri de yazar mısınız: ${missing.join(", ")}?`
-        : "İlan taslağını hazırladım. Bilgileri kontrol edip taslak olarak kaydedebilir veya hemen yayınlayabilirsiniz.",
+        : draft.images?.length
+          ? "İlan taslağını hazırladım. Bilgileri ve fotoğrafları kontrol edip taslak olarak kaydedebilir veya hemen yayınlayabilirsiniz."
+          : "İlan taslağını hazırladım. Yayınlamak için aşağıdaki belirgin alandan en az bir gerçek fotoğraf yükleyin; isterseniz fotoğrafsız taslak olarak da kaydedebilirsiniz.",
     });
   } catch (error) {
     console.error("DeepSeek admin draft failed", error);

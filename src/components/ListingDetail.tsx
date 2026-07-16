@@ -32,7 +32,9 @@ export function ListingDetail({ listing, company }: { listing: Listing; company:
       <main className="listing-detail-page">
         <section className="listing-detail-hero">
           <div className="listing-detail-visual">
-            <img src={listing.images[0] || "/images/forest-house.webp"} alt={listing.title} />
+            {listing.images[0]
+              ? <img src={listing.images[0]} alt={listing.title} />
+              : <div className="listing-image-empty detail-empty-image"><span>İKİSU</span><strong>Bu ilana henüz fotoğraf eklenmedi.</strong><small>Görseller portföy yöneticisi tarafından yakında eklenecek.</small></div>}
             <div className="property-badges">
               {listing.urgent && <span className="badge-urgent">Çok acil</span>}
               {discount > 0 && <span className="badge-discount">%{discount} fiyat düştü</span>}

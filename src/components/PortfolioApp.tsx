@@ -189,7 +189,9 @@ export default function PortfolioApp({ listings, company }: { listings: Listing[
                 <article className="property-card" key={listing.id}>
                   <a className="property-hit" href={`/ilan/${listing.slug}`} aria-label={`${listing.title} detayını aç`} />
                   <div className="property-image">
-                    <img src={listing.images[0] || "/images/forest-house.webp"} alt={listing.title} />
+                    {listing.images[0]
+                      ? <img src={listing.images[0]} alt={listing.title} />
+                      : <div className="listing-image-empty"><span>İKİSU</span><strong>Fotoğraf hazırlanıyor</strong></div>}
                     <div className="property-badges">
                       {listing.urgent && <span className="badge-urgent">Çok acil</span>}
                       {discountPercent(listing) > 0 && <span className="badge-discount">%{discountPercent(listing)} fiyat düştü</span>}
