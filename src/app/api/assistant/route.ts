@@ -40,6 +40,16 @@ function toAction(listing: Awaited<ReturnType<typeof getListings>>[number]): Lis
   return { type: "open_listing", reference: listing.reference, title: listing.title, href: `/ilan/${listing.slug}` };
 }
 
+function openingMessage(listing: Awaited<ReturnType<typeof getListings>>[number], question: string) {
+  const messages = [
+    `Elbette efendim. ${listing.reference} numaralı “${listing.title}” ilanını sizin için hemen açıyorum.`,
+    `Tabii efendim, memnuniyetle. “${listing.title}” portföyünü şimdi önünüze getiriyorum.`,
+    `Memnuniyetle efendim. Aradığınız ${listing.reference} numaralı ilanı hemen açıyorum.`,
+  ];
+  const index = [...question].reduce((sum, character) => sum + character.charCodeAt(0), 0) % messages.length;
+  return messages[index];
+}
+
 const ignoredTokens = new Set([
   "ac", "goster", "getir", "gotur", "incele", "git", "bak", "bakalim",
   "ilan", "ilani", "ilanini", "portfoy", "portfoyu", "sayfa", "sayfasi", "sayfasina",
@@ -139,8 +149,8 @@ export async function POST(request: Request) {
     const actions = match.listings.map(toAction);
     return NextResponse.json({
       answer: match.autoOpen
-        ? `${match.listings[0].reference} · ${match.listings[0].title} açılıyor.`
-        : `${match.listings.length} uygun seçenek buldum. İncelemek istediğiniz ilanı seçin.`,
+        ? openingMessage(match.listings[0], latestQuestion)
+        : `Elbette efendim, isteğinize uyan ${match.listings.length} güzel seçenek buldum. İncelemek istediğiniz ilanı seçebilirsiniz.`,
       actions,
       autoOpen: match.autoOpen,
     });

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 type ListingAction = { type: "open_listing"; reference: string; title: string; href: string };
 type Message = { role: "user" | "assistant"; content: string; actions?: ListingAction[] };
@@ -16,11 +16,22 @@ export function AIConcierge() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
   const [error, setError] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const redirectTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages, loading, error, redirecting]);
+
+  useEffect(() => () => {
+    if (redirectTimerRef.current) window.clearTimeout(redirectTimerRef.current);
+  }, []);
 
   async function ask(content: string) {
     const question = content.trim();
-    if (!question || loading) return;
+    if (!question || loading || redirecting) return;
     const next = [...messages, { role: "user" as const, content: question }];
     setMessages(next);
     setInput("");
@@ -42,7 +53,10 @@ export function AIConcierge() {
       const answer = { role: "assistant" as const, content: payload.answer, actions: payload.actions as ListingAction[] | undefined };
       setMessages((current) => [...current, answer]);
       if (payload.autoOpen && payload.actions?.[0]?.href) {
-        window.location.assign(payload.actions[0].href);
+        setRedirecting(true);
+        redirectTimerRef.current = window.setTimeout(() => {
+          window.location.assign(payload.actions[0].href);
+        }, 1600);
       }
     } catch {
       setError("Bağlantı kurulamadı. Lütfen tekrar deneyin.");
@@ -74,12 +88,14 @@ export function AIConcierge() {
               </div>
             ))}
             {loading && <div className="ai-message assistant typing"><i /><i /><i /></div>}
+            {redirecting && <div className="ai-redirecting"><span /> İlan sayfası hazırlanıyor…</div>}
             {error && <div className="ai-error">{error}</div>}
+            <div ref={messagesEndRef} />
           </div>
           {messages.length === 0 && <div className="ai-suggestions">{suggestions.map((item) => <button type="button" key={item} onClick={() => void ask(item)}>{item}</button>)}</div>}
           <form onSubmit={submit}>
-            <input value={input} onChange={(event) => setInput(event.target.value)} maxLength={1200} placeholder="Nasıl bir mülk arıyorsunuz?" aria-label="Yapay zekâya sorunuz" />
-            <button type="submit" disabled={loading || !input.trim()} aria-label="Soruyu gönder">↑</button>
+            <input value={input} onChange={(event) => setInput(event.target.value)} maxLength={1200} placeholder="Nasıl bir mülk arıyorsunuz?" aria-label="Yapay zekâya sorunuz" disabled={redirecting} />
+            <button type="submit" disabled={loading || redirecting || !input.trim()} aria-label="Soruyu gönder">↑</button>
           </form>
           <small>Yanıtlar bilgilendirme amaçlıdır; güncel bilgi danışmanla doğrulanır.</small>
         </section>

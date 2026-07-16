@@ -2010,6 +2010,9 @@ img {
 .ai-message.assistant { align-self: flex-start; color: #34423c; background: white; border: 1px solid #e1ddd3; }
 .ai-message.user { align-self: flex-end; color: white; background: var(--forest); }
 .ai-error { padding: 11px; color: #7b3b32; border: 1px solid #e0bbb5; background: #f4dfdc; font-size: 9px; line-height: 1.5; }
+.ai-redirecting { padding: 10px 12px; display: flex; align-items: center; gap: 9px; color: #52615b; border: 1px solid #ded9ce; background: rgba(255,255,255,.7); font-size: 8px; letter-spacing: .06em; }
+.ai-redirecting span { width: 13px; height: 13px; flex-shrink: 0; border: 2px solid #c8c4ba; border-top-color: var(--forest); border-radius: 50%; animation: aiSpin .8s linear infinite; }
+@keyframes aiSpin { to { transform: rotate(360deg); } }
 .typing { display: flex; gap: 4px; }
 .typing i { width: 5px; height: 5px; border-radius: 50%; background: #7b8882; animation: aiPulse 1s infinite alternate; }
 .typing i:nth-child(2) { animation-delay: .2s; }.typing i:nth-child(3) { animation-delay: .4s; }
@@ -2044,7 +2047,7 @@ img {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .typing i { animation: none; }
+  .typing i,.ai-redirecting span { animation: none; }
 }
 
 /* Dedicated listing pages and AI navigation actions */
