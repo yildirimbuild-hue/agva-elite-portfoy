@@ -10,9 +10,11 @@ const required = [
   "propertyType",
   "location",
   "price",
+  "oldPrice",
   "currency",
   "images",
-  "published"
+  "published",
+  "urgent"
 ];
 
 if (!Array.isArray(listings) || listings.length === 0) {
@@ -29,6 +31,9 @@ for (const [index, listing] of listings.entries()) {
     throw new Error(`Mükerrer ilan id: ${listing.id}`);
   }
   ids.add(listing.id);
+  if (listing.oldPrice > 0 && listing.oldPrice <= listing.price) {
+    throw new Error(`Kayıt ${index + 1}: eski fiyat yeni fiyattan yüksek olmalıdır.`);
+  }
 }
 
 console.log(`Portföy doğrulandı: ${listings.length} benzersiz kayıt.`);

@@ -5,6 +5,10 @@ import type { Listing, ListingInput } from "./types";
 
 const localDataPath = path.join(process.cwd(), "data", "listings.json");
 
+function normalizeListing(listing: Listing): Listing {
+  return { ...listing, oldPrice: listing.oldPrice ?? 0, urgent: listing.urgent ?? false };
+}
+
 function githubConfig() {
   const token = process.env.GITHUB_TOKEN;
   const repository = process.env.GITHUB_DATA_REPOSITORY;
@@ -68,7 +72,7 @@ async function writeLocalListings(listings: Listing[]) {
 
 export async function getListings(options: { includeDrafts?: boolean } = {}) {
   const config = githubConfig();
-  const listings = config ? (await readGithubListings(config)).listings : await readLocalListings();
+  const listings = (config ? (await readGithubListings(config)).listings : await readLocalListings()).map(normalizeListing);
   const visible = options.includeDrafts ? listings : listings.filter((item) => item.published);
   return visible.sort((a, b) => Number(b.featured) - Number(a.featured) || b.updatedAt.localeCompare(a.updatedAt));
 }
@@ -94,6 +98,8 @@ export async function createListing(input: ListingInput) {
   const now = new Date().toISOString();
   const listing: Listing = {
     ...input,
+    oldPrice: input.oldPrice ?? 0,
+    urgent: input.urgent ?? false,
     id: randomUUID(),
     reference: `IKS-${String(listings.length + 1).padStart(4, "0")}`,
     slug: `${slugify(input.title)}-${Date.now().toString(36)}`,

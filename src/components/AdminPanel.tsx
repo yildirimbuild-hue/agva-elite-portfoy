@@ -11,6 +11,7 @@ const emptyForm: ListingInput = {
   location: "Ağva Merkez",
   district: "Şile / İstanbul",
   price: 0,
+  oldPrice: 0,
   currency: "TRY",
   rooms: "3+1",
   bathrooms: 1,
@@ -22,6 +23,7 @@ const emptyForm: ListingInput = {
   features: [],
   images: [],
   featured: false,
+  urgent: false,
   published: true,
   isDemo: false,
 };
@@ -161,7 +163,7 @@ export function AdminPanel({ initialListings }: { initialListings: Listing[] }) 
           <article><span>Toplam portföy</span><strong>{listings.length}</strong></article>
           <article><span>Yayındaki ilan</span><strong>{listings.filter((item) => item.published).length}</strong></article>
           <article><span>Taslak</span><strong>{listings.filter((item) => !item.published).length}</strong></article>
-          <article><span>Öne çıkan</span><strong>{listings.filter((item) => item.featured).length}</strong></article>
+          <article><span>Acil portföy</span><strong>{listings.filter((item) => item.urgent).length}</strong></article>
         </div>
 
         <div className="admin-toolbar">
@@ -177,7 +179,7 @@ export function AdminPanel({ initialListings }: { initialListings: Listing[] }) 
               <tr key={listing.id}>
                 <td><div className="admin-listing-cell"><img src={listing.images[0] || "/images/forest-house.webp"} alt="" /><div><strong>{listing.title}</strong><span>{listing.reference} · {listing.location}</span></div></div></td>
                 <td><strong>{listing.purpose}</strong><span>{listing.propertyType}</span></td>
-                <td><strong>{formatPrice(listing)}</strong></td>
+                <td><div className="admin-price-cell">{listing.oldPrice > listing.price && <del>{new Intl.NumberFormat("tr-TR").format(listing.oldPrice)} TL</del>}<strong>{formatPrice(listing)}</strong>{listing.urgent && <span className="admin-urgent-pill">Çok acil</span>}</div></td>
                 <td><button className={listing.published ? "status-pill published" : "status-pill"} type="button" onClick={() => togglePublished(listing)}>{listing.published ? "Yayında" : "Taslak"}</button></td>
                 <td>{new Date(listing.updatedAt).toLocaleDateString("tr-TR")}</td>
                 <td><div className="admin-row-actions"><button type="button" onClick={() => openEdit(listing)}>Düzenle</button><button className="danger" type="button" onClick={() => remove(listing)}>Sil</button></div></td>
@@ -199,6 +201,7 @@ export function AdminPanel({ initialListings }: { initialListings: Listing[] }) 
               <label><span>Bölge *</span><input value={form.location} onChange={(event) => updateField("location", event.target.value)} required /></label>
               <label><span>İlçe / İl</span><input value={form.district} onChange={(event) => updateField("district", event.target.value)} /></label>
               <label><span>Fiyat *</span><input type="number" min="0" value={form.price} onChange={(event) => updateField("price", Number(event.target.value))} required /></label>
+              <label><span>Eski fiyat</span><input type="number" min="0" value={form.oldPrice} onChange={(event) => updateField("oldPrice", Number(event.target.value))} /><small>Fiyat indirimi yoksa 0 bırakın.</small></label>
               <label><span>Para birimi</span><select value={form.currency} onChange={(event) => updateField("currency", event.target.value as ListingInput["currency"])}><option value="TRY">TL</option><option value="USD">USD</option><option value="EUR">EUR</option></select></label>
               <label><span>Oda</span><input value={form.rooms} onChange={(event) => updateField("rooms", event.target.value)} /></label>
               <label><span>Banyo</span><input type="number" min="0" value={form.bathrooms} onChange={(event) => updateField("bathrooms", Number(event.target.value))} /></label>
@@ -212,6 +215,7 @@ export function AdminPanel({ initialListings }: { initialListings: Listing[] }) 
               <label className="span-2 upload-field"><span>Bilgisayardan görsel yükle</span><input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={uploadImages} /><small>JPG, PNG veya WebP · Görsel başına en fazla 8 MB</small></label>
               {form.images.length > 0 && <div className="admin-image-previews span-2">{form.images.map((image) => <div key={image}><img src={image} alt="Yüklenen ilan" /><button type="button" onClick={() => updateField("images", form.images.filter((item) => item !== image))}>×</button></div>)}</div>}
               <label className="check-field"><input type="checkbox" checked={form.featured} onChange={(event) => updateField("featured", event.target.checked)} /><span>Öne çıkar</span></label>
+              <label className="check-field urgent-check"><input type="checkbox" checked={form.urgent} onChange={(event) => updateField("urgent", event.target.checked)} /><span>Çok acil etiketi</span></label>
               <label className="check-field"><input type="checkbox" checked={form.published} onChange={(event) => updateField("published", event.target.checked)} /><span>Hemen yayınla</span></label>
             </div>
             <footer><button type="button" onClick={() => setEditorOpen(false)}>Vazgeç</button><button className="admin-primary" type="submit" disabled={saving}>{saving ? "Kaydediliyor..." : editingId ? "Değişiklikleri kaydet" : "İlanı kaydet"}</button></footer>

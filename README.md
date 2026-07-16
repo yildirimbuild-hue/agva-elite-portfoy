@@ -8,6 +8,9 @@ ticari portföyleri yöneten tam kapsamlı emlak uygulaması.
 - 24 kayıtlık örnek portföy; 22 yayında, 2 taslak
 - İşlem, emlak tipi, bölge, anahtar kelime ve sıralama filtreleri
 - İlan detay sunumu ve mobil uyumlu katalog
+- İlan bazlı hazır mesajla WhatsApp geçişi ve telefonla arama
+- Canlı portföyü ve firma profilini okuyan DeepSeek yapay zekâ danışmanı
+- Yönetilebilir “Çok acil” ve eski/yeni fiyat etiketleri
 - Şifreli admin oturumu
 - İlan ekleme, düzenleme, yayın/taslak değiştirme ve silme
 - Bilgisayardan JPG, PNG ve WebP görsel yükleme
@@ -33,9 +36,24 @@ Admin: `http://localhost:3200/admin`
 `.env.local` içinde güçlü bir `ADMIN_PASSWORD` ve uzun, rastgele bir
 `ADMIN_SESSION_SECRET` kullanılmalıdır. Bu dosya Git tarafından izlenmez.
 
+İletişim ve yapay zekâ için aşağıdaki değerler de sunucu ortamına eklenir:
+
+```bash
+NEXT_PUBLIC_WHATSAPP_NUMBER=905XXXXXXXXX
+NEXT_PUBLIC_PHONE_NUMBER=+905XXXXXXXXX
+DEEPSEEK_API_KEY=your-deepseek-api-key
+DEEPSEEK_MODEL=deepseek-v4-flash
+```
+
+WhatsApp numarası yalnız rakamlardan ve ülke koduyla yazılmalıdır. API anahtarı
+yalnız sunucuda kalır; tarayıcıya gönderilmez. Numara veya anahtar yokken arayüz
+sahte bir iletişim noktası üretmez ve eksik yapılandırmayı açıkça bildirir.
+
 ## Veri
 
 Yerel veri dosyası: `data/listings.json`
+
+Firma profili ve yapay zekânın firma bilgisi: `data/company.json`
 
 Örnek veriyi yeniden üretmek için:
 

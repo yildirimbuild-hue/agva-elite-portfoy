@@ -1,14 +1,21 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { Listing } from "@/lib/types";
+import { AIConcierge } from "@/components/AIConcierge";
+import type { CompanyProfile, Listing } from "@/lib/types";
 
-const formatPrice = (listing: Listing) =>
+const formatMoney = (amount: number, currency: Listing["currency"]) =>
   new Intl.NumberFormat("tr-TR", {
     style: "currency",
-    currency: listing.currency,
+    currency,
     maximumFractionDigits: 0,
-  }).format(listing.price);
+  }).format(amount);
+
+const formatPrice = (listing: Listing) => formatMoney(listing.price, listing.currency);
+
+const discountPercent = (listing: Listing) => listing.oldPrice > listing.price
+  ? Math.round(((listing.oldPrice - listing.price) / listing.oldPrice) * 100)
+  : 0;
 
 function Arrow() {
   return (
@@ -18,7 +25,7 @@ function Arrow() {
   );
 }
 
-export default function PortfolioApp({ listings }: { listings: Listing[] }) {
+export default function PortfolioApp({ listings, company }: { listings: Listing[]; company: CompanyProfile }) {
   const [query, setQuery] = useState("");
   const [purpose, setPurpose] = useState("Tümü");
   const [propertyType, setPropertyType] = useState("Tümü");
@@ -73,6 +80,16 @@ export default function PortfolioApp({ listings }: { listings: Listing[] }) {
     setLocation("Tümü");
   };
 
+  const whatsappDigits = company.whatsappNumber.replace(/\D/g, "");
+  const phoneNumber = company.phoneNumber.trim();
+  const contactMissing = () => window.alert("Firma iletişim numarası henüz yönetim ayarlarına eklenmedi.");
+  const whatsappHref = (listing?: Listing) => {
+    const message = listing
+      ? `Merhaba, ${listing.reference} numaralı “${listing.title}” ilanı hakkında bilgi almak istiyorum.`
+      : "Merhaba, Ağva ve Şile portföyleriniz hakkında bilgi almak istiyorum.";
+    return `https://wa.me/${whatsappDigits}?text=${encodeURIComponent(message)}`;
+  };
+
   return (
     <>
       <header className="catalog-header">
@@ -87,6 +104,7 @@ export default function PortfolioApp({ listings }: { listings: Listing[] }) {
           <a href="#portfoy" onClick={() => setMenuOpen(false)}>Tüm portföy</a>
           <a className="admin-nav-link" href="/admin">Admin paneli</a>
         </nav>
+        {whatsappDigits ? <a className="header-contact" href={whatsappHref()} target="_blank" rel="noreferrer">WhatsApp</a> : <button className="header-contact" type="button" onClick={contactMissing}>WhatsApp</button>}
         <button className="menu-button catalog-menu" type="button" onClick={() => setMenuOpen((value) => !value)} aria-label="Menüyü aç veya kapat">
           <span /><span />
         </button>
@@ -185,7 +203,10 @@ export default function PortfolioApp({ listings }: { listings: Listing[] }) {
                   <div className="property-image">
                     <img src={listing.images[0] || "/images/forest-house.webp"} alt={listing.title} />
                     <div className="property-badges">
-                      <span>{listing.purpose}</span>{listing.featured && <span>Öne çıkan</span>}{listing.isDemo && <span>Demo</span>}
+                      {listing.urgent && <span className="badge-urgent">Çok acil</span>}
+                      {discountPercent(listing) > 0 && <span className="badge-discount">%{discountPercent(listing)} fiyat düştü</span>}
+                      <span className="badge-purpose">{listing.purpose}</span>
+                      {listing.featured && <span className="badge-featured">Öne çıkan</span>}
                     </div>
                     <button className="favorite" type="button" aria-label="Favoriye ekle">♡</button>
                   </div>
@@ -198,7 +219,14 @@ export default function PortfolioApp({ listings }: { listings: Listing[] }) {
                       {listing.grossArea > 0 && <span>{listing.grossArea} m²</span>}
                       {listing.landArea > 0 && <span>{listing.landArea} m² arsa</span>}
                     </div>
-                    <div className="property-price"><strong>{formatPrice(listing)}</strong><span>Detaylar →</span></div>
+                    <div className="property-price">
+                      <div>{listing.oldPrice > listing.price && <del>{formatMoney(listing.oldPrice, listing.currency)}</del>}<strong>{formatPrice(listing)}</strong></div>
+                      <span>Detaylar →</span>
+                    </div>
+                    <div className="property-contact-actions">
+                      {whatsappDigits ? <a href={whatsappHref(listing)} target="_blank" rel="noreferrer">WhatsApp’tan yaz</a> : <button type="button" onClick={contactMissing}>WhatsApp’tan yaz</button>}
+                      {phoneNumber ? <a href={`tel:${phoneNumber}`}>Hemen ara</a> : <button type="button" onClick={contactMissing}>Hemen ara</button>}
+                    </div>
                   </div>
                 </article>
               ))}
@@ -230,7 +258,11 @@ export default function PortfolioApp({ listings }: { listings: Listing[] }) {
               <div className="property-meta"><span>{selected.purpose} · {selected.propertyType}</span><span>{selected.reference}</span></div>
               <h2 id="property-modal-title">{selected.title}</h2>
               <p className="property-location">{selected.location} · {selected.district}</p>
-              <strong className="modal-price">{formatPrice(selected)}</strong>
+              <div className="modal-price-wrap">
+                {selected.oldPrice > selected.price && <del>{formatMoney(selected.oldPrice, selected.currency)}</del>}
+                <strong className="modal-price">{formatPrice(selected)}</strong>
+                {discountPercent(selected) > 0 && <span>%{discountPercent(selected)} fiyat avantajı</span>}
+              </div>
               <div className="modal-spec-grid">
                 <div><span>Oda</span><strong>{selected.rooms}</strong></div>
                 <div><span>Brüt alan</span><strong>{selected.grossArea || "—"} m²</strong></div>
@@ -239,11 +271,20 @@ export default function PortfolioApp({ listings }: { listings: Listing[] }) {
               </div>
               <p className="modal-description">{selected.description}</p>
               <div className="modal-features">{selected.features.map((item) => <span key={item}>✓ {item}</span>)}</div>
+              <div className="modal-contact-actions">
+                {whatsappDigits ? <a className="whatsapp-action" href={whatsappHref(selected)} target="_blank" rel="noreferrer">WhatsApp’tan bilgi al</a> : <button className="whatsapp-action" type="button" onClick={contactMissing}>WhatsApp’tan bilgi al</button>}
+                {phoneNumber ? <a className="call-action" href={`tel:${phoneNumber}`}>Danışmanı ara</a> : <button className="call-action" type="button" onClick={contactMissing}>Danışmanı ara</button>}
+              </div>
               {selected.isDemo && <div className="modal-demo-warning">Bu kayıt sistem gösterimi için oluşturulmuş örnek ilandır.</div>}
             </div>
           </div>
         </div>
       )}
+      <div className="contact-dock" aria-label="Hızlı iletişim">
+        {whatsappDigits ? <a className="dock-whatsapp" href={whatsappHref()} target="_blank" rel="noreferrer"><span>WA</span><strong>Mesaj yaz</strong></a> : <button className="dock-whatsapp" type="button" onClick={contactMissing}><span>WA</span><strong>Mesaj yaz</strong></button>}
+        {phoneNumber ? <a className="dock-call" href={`tel:${phoneNumber}`}><span>☎</span><strong>Ara</strong></a> : <button className="dock-call" type="button" onClick={contactMissing}><span>☎</span><strong>Ara</strong></button>}
+      </div>
+      <AIConcierge />
     </>
   );
 }

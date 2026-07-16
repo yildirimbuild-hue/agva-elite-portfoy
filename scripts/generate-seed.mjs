@@ -36,6 +36,8 @@ const images = [
 ];
 
 const now = "2026-07-16T06:30:00.000Z";
+const discountedIndexes = new Set([0, 2, 4, 9, 17]);
+const urgentIndexes = new Set([0, 5, 16, 20]);
 const listings = entries.map(([title, purpose, propertyType, location, price, rooms, grossArea, landArea], index) => ({
   id: randomUUID(),
   reference: `IKS-${String(index + 1).padStart(4, "0")}`,
@@ -46,6 +48,7 @@ const listings = entries.map(([title, purpose, propertyType, location, price, ro
   location,
   district: "Şile / İstanbul",
   price,
+  oldPrice: discountedIndexes.has(index) ? Math.round(Number(price) * 1.14 / 5000) * 5000 : 0,
   currency: "TRY",
   rooms,
   bathrooms: propertyType === "Arsa" || propertyType === "Ticari" ? 0 : index % 3 + 1,
@@ -59,6 +62,7 @@ const listings = entries.map(([title, purpose, propertyType, location, price, ro
     : ["Doğa ile iç içe", "Geniş yaşam alanı", index % 2 ? "Bahçe kullanımı" : "Manzara"],
   images: [images[index % images.length]],
   featured: index < 4,
+  urgent: urgentIndexes.has(index),
   published: index < 22,
   isDemo: true,
   createdAt: now,

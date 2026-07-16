@@ -1,6 +1,6 @@
 [
   {
-    "id": "9b224f0b-7944-438d-91d7-2f38d49d4b01",
+    "id": "255cd4d7-7239-4b50-9ddb-a0d67efe7796",
     "reference": "IKS-0004",
     "title": "Ağva Merkezde Yeni Daire",
     "slug": "agva-portfoy-4",
@@ -9,6 +9,7 @@
     "location": "Ağva Merkez",
     "district": "Şile / İstanbul",
     "price": 7650000,
+    "oldPrice": 0,
     "currency": "TRY",
     "rooms": "3+1",
     "bathrooms": 1,
@@ -26,13 +27,14 @@
       "/images/hero-agva.webp"
     ],
     "featured": true,
+    "urgent": false,
     "published": true,
     "isDemo": true,
     "createdAt": "2026-07-16T06:30:00.000Z",
     "updatedAt": "2026-07-16T06:33:00.000Z"
   },
   {
-    "id": "e2bb1fb6-e255-431e-9d5c-df4cb93f8cd7",
+    "id": "3e0a1867-8822-4b45-833f-b92a3a44a719",
     "reference": "IKS-0003",
     "title": "Kilimli Kıyı Hattında Manzaralı Villa",
     "slug": "agva-portfoy-3",
@@ -41,6 +43,7 @@
     "location": "Kilimli",
     "district": "Şile / İstanbul",
     "price": 42750000,
+    "oldPrice": 48735000,
     "currency": "TRY",
     "rooms": "6+2",
     "bathrooms": 3,
@@ -58,13 +61,14 @@
       "/images/coast-house.webp"
     ],
     "featured": true,
+    "urgent": false,
     "published": true,
     "isDemo": true,
     "createdAt": "2026-07-16T06:30:00.000Z",
     "updatedAt": "2026-07-16T06:32:00.000Z"
   },
   {
-    "id": "6d473475-7c6c-4715-92f3-448e2706b705",
+    "id": "75560cff-278a-4250-8fca-e6223f438e15",
     "reference": "IKS-0002",
     "title": "Yeşilçay'da Bahçeli Müstakil Yaşam",
     "slug": "agva-portfoy-2",
@@ -73,6 +77,7 @@
     "location": "Yeşilçay",
     "district": "Şile / İstanbul",
     "price": 18900000,
+    "oldPrice": 0,
     "currency": "TRY",
     "rooms": "4+1",
     "bathrooms": 2,
@@ -90,13 +95,14 @@
       "/images/forest-house.webp"
     ],
     "featured": true,
+    "urgent": false,
     "published": true,
     "isDemo": true,
     "createdAt": "2026-07-16T06:30:00.000Z",
     "updatedAt": "2026-07-16T06:31:00.000Z"
   },
   {
-    "id": "e033ed86-f725-46e9-b1f2-d30e5d976be4",
+    "id": "99c73112-d3e5-44f3-8449-fd428b28ce48",
     "reference": "IKS-0001",
     "title": "Göksu Nehir Kıyısında Özel İskeleli Villa",
     "slug": "agva-portfoy-1",
@@ -105,6 +111,7 @@
     "location": "Göksu",
     "district": "Şile / İstanbul",
     "price": 38500000,
+    "oldPrice": 43890000,
     "currency": "TRY",
     "rooms": "5+1",
     "bathrooms": 1,
@@ -122,13 +129,14 @@
       "/images/goksu-house.webp"
     ],
     "featured": true,
+    "urgent": true,
     "published": true,
     "isDemo": true,
     "createdAt": "2026-07-16T06:30:00.000Z",
     "updatedAt": "2026-07-16T06:30:00.000Z"
   },
   {
-    "id": "b4a327f2-7547-4f9d-bf36-a06b0da8a406",
+    "id": "86157a37-6c5c-4d8d-93e0-f8c528e270eb",
     "reference": "IKS-0024",
     "title": "Bucaklı'da Dere Cepheli Villa",
     "slug": "agva-portfoy-24",
@@ -137,6 +145,7 @@
     "location": "Bucaklı",
     "district": "Şile / İstanbul",
     "price": 31250000,
+    "oldPrice": 0,
     "currency": "TRY",
     "rooms": "5+1",
     "bathrooms": 3,
@@ -154,13 +163,14 @@
       "/images/hero-agva.webp"
     ],
     "featured": false,
+    "urgent": false,
     "published": false,
     "isDemo": true,
     "createdAt": "2026-07-16T06:30:00.000Z",
     "updatedAt": "2026-07-16T06:53:00.000Z"
   },
   {
-    "id": "f82a1cc1-492d-4f54-b862-e2d7cac788a7",
+    "id": "e236d317-7248-493c-8f87-a56fd7614853",
     "reference": "IKS-0023",
     "title": "Gökmaslı'da Butik Otel Projesi",
     "slug": "agva-portfoy-23",
@@ -169,6 +179,7 @@
     "location": "Gökmaslı",
     "district": "Şile / İstanbul",
     "price": 53500000,
+    "oldPrice": 0,
     "currency": "TRY",
     "rooms": "16 oda",
     "bathrooms": 0,
@@ -186,13 +197,14 @@
       "/images/coast-house.webp"
     ],
     "featured": false,
+    "urgent": false,
     "published": false,
     "isDemo": true,
     "createdAt": "2026-07-16T06:30:00.000Z",
     "updatedAt": "2026-07-16T06:52:00.000Z"
   },
   {
-    "id": "f3b6b267-aebf-4d2f-b87f-05b6cd165f10",
+    "id": "7f39b15c-dee9-4992-b8d9-6aa9b40c4e45",
     "reference": "IKS-0022",
     "title": "İsaköy'de Çiftlik Evi ve Bahçe",
     "slug": "agva-portfoy-22",
@@ -201,6 +213,7 @@
     "location": "İsaköy",
     "district": "Şile / İstanbul",
     "price": 27900000,
+    "oldPrice": 0,
     "currency": "TRY",
     "rooms": "5+2",
     "bathrooms": 1,
@@ -218,13 +231,14 @@
       "/images/forest-house.webp"
     ],
     "featured": false,
+    "urgent": false,
     "published": true,
     "isDemo": true,
     "createdAt": "2026-07-16T06:30:00.000Z",
     "updatedAt": "2026-07-16T06:51:00.000Z"
   },
   {
-    "id": "fe091c9d-98af-4d38-bdf2-924844eb9211",
+    "id": "3b7e66a3-73c6-4eee-a73b-88661db7eb35",
     "reference": "IKS-0021",
     "title": "Yeşilçay'da Eşyalı Kiralık Daire",
     "slug": "agva-portfoy-21",
@@ -233,6 +247,7 @@
     "location": "Yeşilçay",
     "district": "Şile / İstanbul",
     "price": 42000,
+    "oldPrice": 0,
     "currency": "TRY",
     "rooms": "2+1",
     "bathrooms": 3,
@@ -250,13 +265,14 @@
       "/images/goksu-house.webp"
     ],
     "featured": false,
+    "urgent": true,
     "published": true,
     "isDemo": true,
     "createdAt": "2026-07-16T06:30:00.000Z",
     "updatedAt": "2026-07-16T06:50:00.000Z"
   },
   {
-    "id": "ca339c37-5f07-4697-a979-1d41e9054ff7",
+    "id": "7ce939e2-bb17-441d-a045-9b3d1f6fd7b9",
     "reference": "IKS-0020",
     "title": "Kilimli'de Deniz Görüşlü Arsa",
     "slug": "agva-portfoy-20",
@@ -265,6 +281,7 @@
     "location": "Kilimli",
     "district": "Şile / İstanbul",
     "price": 18400000,
+    "oldPrice": 0,
     "currency": "TRY",
     "rooms": "—",
     "bathrooms": 0,
@@ -282,13 +299,14 @@
       "/images/hero-agva.webp"
     ],
     "featured": false,
+    "urgent": false,
     "published": true,
     "isDemo": true,
     "createdAt": "2026-07-16T06:30:00.000Z",
     "updatedAt": "2026-07-16T06:49:00.000Z"
   },
   {
-    "id": "4bd1ea67-aecb-4b32-b06b-80c4dd887415",
+    "id": "fe359928-ea0e-420d-98c3-052028f17d85",
     "reference": "IKS-0019",
     "title": "Göksu'da İki Katlı Bahçeli Ev",
     "slug": "agva-portfoy-19",
@@ -297,6 +315,7 @@
     "location": "Göksu",
     "district": "Şile / İstanbul",
     "price": 19750000,
+    "oldPrice": 0,
     "currency": "TRY",
     "rooms": "5+1",
     "bathrooms": 1,
@@ -314,13 +333,14 @@
       "/images/coast-house.webp"
     ],
     "featured": false,
+    "urgent": false,
     "published": true,
     "isDemo": true,
     "createdAt": "2026-07-16T06:30:00.000Z",
     "updatedAt": "2026-07-16T06:48:00.000Z"
   },
   {
-    "id": "9b94e8aa-7acc-489f-84ce-58fbd1f5fcad",
+    "id": "cc9ff0ac-01ce-4e8d-ab1e-58c794b89965",
     "reference": "IKS-0018",
     "title": "Ağva Merkezde Pansiyon İşletmesi",
     "slug": "agva-portfoy-18",
@@ -329,6 +349,7 @@
     "location": "Ağva Merkez",
     "district": "Şile / İstanbul",
     "price": 46500000,
+    "oldPrice": 53010000,
     "currency": "TRY",
     "rooms": "12 oda",
     "bathrooms": 0,
@@ -346,13 +367,14 @@
       "/images/forest-house.webp"
     ],
     "featured": false,
+    "urgent": false,
     "published": true,
     "isDemo": true,
     "createdAt": "2026-07-16T06:30:00.000Z",
     "updatedAt": "2026-07-16T06:47:00.000Z"
   },
   {
-    "id": "9721458d-5031-4bfd-b841-9a28f2b2b72a",
+    "id": "07b6e827-f1eb-4ade-b3d3-0a92cc9fe2b4",
     "reference": "IKS-0017",
     "title": "Kurfallı'da Şömineli Orman Villası",
     "slug": "agva-portfoy-17",
@@ -361,6 +383,7 @@
     "location": "Kurfallı",
     "district": "Şile / İstanbul",
     "price": 125000,
+    "oldPrice": 0,
     "currency": "TRY",
     "rooms": "4+1",
     "bathrooms": 2,
@@ -378,13 +401,14 @@
       "/images/goksu-house.webp"
     ],
     "featured": false,
+    "urgent": true,
     "published": true,
     "isDemo": true,
     "createdAt": "2026-07-16T06:30:00.000Z",
     "updatedAt": "2026-07-16T06:46:00.000Z"
   },
   {
-    "id": "1fd7e1ae-d91c-4674-99ce-90cb9a11a493",
+    "id": "36be3834-1cb4-4155-8323-f7bc047f9638",
     "reference": "IKS-0016",
     "title": "Yeşilçay'da Teraslı Çatı Dubleksi",
     "slug": "agva-portfoy-16",
@@ -393,6 +417,7 @@
     "location": "Yeşilçay",
     "district": "Şile / İstanbul",
     "price": 11250000,
+    "oldPrice": 0,
     "currency": "TRY",
     "rooms": "4+1",
     "bathrooms": 1,
@@ -410,13 +435,14 @@
       "/images/hero-agva.webp"
     ],
     "featured": false,
+    "urgent": false,
     "published": true,
     "isDemo": true,
     "createdAt": "2026-07-16T06:30:00.000Z",
     "updatedAt": "2026-07-16T06:45:00.000Z"
   },
   {
-    "id": "bf19c897-1bf3-4a8e-b892-93c6a2997b3d",
+    "id": "8edc1e60-e8dc-496e-b74f-aa6ebd3e7c31",
     "reference": "IKS-0015",
     "title": "Bucaklı'da Köşe Parsel Arsa",
     "slug": "agva-portfoy-15",
@@ -425,6 +451,7 @@
     "location": "Bucaklı",
     "district": "Şile / İstanbul",
     "price": 6750000,
+    "oldPrice": 0,
     "currency": "TRY",
     "rooms": "—",
     "bathrooms": 0,
@@ -442,13 +469,14 @@
       "/images/coast-house.webp"
     ],
     "featured": false,
+    "urgent": false,
     "published": true,
     "isDemo": true,
     "createdAt": "2026-07-16T06:30:00.000Z",
     "updatedAt": "2026-07-16T06:44:00.000Z"
   },
   {
-    "id": "5bfaa510-39a2-4537-b7e4-eb22515a56c3",
+    "id": "9f593778-c12e-471d-a5af-7636f69331de",
     "reference": "IKS-0014",
     "title": "Gökmaslı'da Doğa İçinde Villa",
     "slug": "agva-portfoy-14",
@@ -457,6 +485,7 @@
     "location": "Gökmaslı",
     "district": "Şile / İstanbul",
     "price": 24800000,
+    "oldPrice": 0,
     "currency": "TRY",
     "rooms": "4+1",
     "bathrooms": 2,
@@ -474,13 +503,14 @@
       "/images/forest-house.webp"
     ],
     "featured": false,
+    "urgent": false,
     "published": true,
     "isDemo": true,
     "createdAt": "2026-07-16T06:30:00.000Z",
     "updatedAt": "2026-07-16T06:43:00.000Z"
   },
   {
-    "id": "fd7a0080-bd78-4be1-8f9c-653d8a4769b5",
+    "id": "e2f080c5-43f6-4a07-af86-3f8b1475d52d",
     "reference": "IKS-0013",
     "title": "Göksu'da Yenilenmiş Ahşap Ev",
     "slug": "agva-portfoy-13",
@@ -489,6 +519,7 @@
     "location": "Göksu",
     "district": "Şile / İstanbul",
     "price": 16900000,
+    "oldPrice": 0,
     "currency": "TRY",
     "rooms": "3+1",
     "bathrooms": 1,
@@ -506,13 +537,14 @@
       "/images/goksu-house.webp"
     ],
     "featured": false,
+    "urgent": false,
     "published": true,
     "isDemo": true,
     "createdAt": "2026-07-16T06:30:00.000Z",
     "updatedAt": "2026-07-16T06:42:00.000Z"
   },
   {
-    "id": "f48acbf0-f977-43b7-9d84-b199f71cacb7",
+    "id": "1a6ce625-6ede-4881-b078-13f252b6ce6c",
     "reference": "IKS-0012",
     "title": "Ağva Merkezde Balkonlu 2+1",
     "slug": "agva-portfoy-12",
@@ -521,6 +553,7 @@
     "location": "Ağva Merkez",
     "district": "Şile / İstanbul",
     "price": 34000,
+    "oldPrice": 0,
     "currency": "TRY",
     "rooms": "2+1",
     "bathrooms": 3,
@@ -538,13 +571,14 @@
       "/images/hero-agva.webp"
     ],
     "featured": false,
+    "urgent": false,
     "published": true,
     "isDemo": true,
     "createdAt": "2026-07-16T06:30:00.000Z",
     "updatedAt": "2026-07-16T06:41:00.000Z"
   },
   {
-    "id": "817ecd41-c807-4961-8402-875456a32f37",
+    "id": "f41bfd64-2d73-4480-b29a-362f99979bc8",
     "reference": "IKS-0011",
     "title": "İsaköy'de Geniş Tarla ve Proje Alanı",
     "slug": "agva-portfoy-11",
@@ -553,6 +587,7 @@
     "location": "İsaköy",
     "district": "Şile / İstanbul",
     "price": 15400000,
+    "oldPrice": 0,
     "currency": "TRY",
     "rooms": "—",
     "bathrooms": 0,
@@ -570,13 +605,14 @@
       "/images/coast-house.webp"
     ],
     "featured": false,
+    "urgent": false,
     "published": true,
     "isDemo": true,
     "createdAt": "2026-07-16T06:30:00.000Z",
     "updatedAt": "2026-07-16T06:40:00.000Z"
   },
   {
-    "id": "d38e08e6-76bb-4798-9aca-24024e22680e",
+    "id": "ac053933-0d95-4f57-9932-ea618705bbef",
     "reference": "IKS-0010",
     "title": "Kilimli Yolunda Modern Orman Evi",
     "slug": "agva-portfoy-10",
@@ -585,6 +621,7 @@
     "location": "Kilimli",
     "district": "Şile / İstanbul",
     "price": 29750000,
+    "oldPrice": 33915000,
     "currency": "TRY",
     "rooms": "4+2",
     "bathrooms": 1,
@@ -602,13 +639,14 @@
       "/images/forest-house.webp"
     ],
     "featured": false,
+    "urgent": false,
     "published": true,
     "isDemo": true,
     "createdAt": "2026-07-16T06:30:00.000Z",
     "updatedAt": "2026-07-16T06:39:00.000Z"
   },
   {
-    "id": "29f68451-0de1-4e0f-9186-7532f1034108",
+    "id": "7991b1ba-5a43-4718-8b44-fc3ac70ef2b2",
     "reference": "IKS-0009",
     "title": "Yeşilçay'da Dereye Yakın Arsa",
     "slug": "agva-portfoy-9",
@@ -617,6 +655,7 @@
     "location": "Yeşilçay",
     "district": "Şile / İstanbul",
     "price": 12750000,
+    "oldPrice": 0,
     "currency": "TRY",
     "rooms": "—",
     "bathrooms": 0,
@@ -634,13 +673,14 @@
       "/images/goksu-house.webp"
     ],
     "featured": false,
+    "urgent": false,
     "published": true,
     "isDemo": true,
     "createdAt": "2026-07-16T06:30:00.000Z",
     "updatedAt": "2026-07-16T06:38:00.000Z"
   },
   {
-    "id": "93ca32aa-c999-4c03-af24-4a3c19bd32f1",
+    "id": "a7d2f194-e693-440c-9eef-1ddab69c10b9",
     "reference": "IKS-0008",
     "title": "Ağva Çarşıda Ticari Dükkân",
     "slug": "agva-portfoy-8",
@@ -649,6 +689,7 @@
     "location": "Ağva Merkez",
     "district": "Şile / İstanbul",
     "price": 65000,
+    "oldPrice": 0,
     "currency": "TRY",
     "rooms": "Açık plan",
     "bathrooms": 0,
@@ -666,13 +707,14 @@
       "/images/hero-agva.webp"
     ],
     "featured": false,
+    "urgent": false,
     "published": true,
     "isDemo": true,
     "createdAt": "2026-07-16T06:30:00.000Z",
     "updatedAt": "2026-07-16T06:37:00.000Z"
   },
   {
-    "id": "e6972c8c-382d-4bf0-83a6-c8e55539b360",
+    "id": "e4bcd451-2fe5-4cec-a5ee-ff2e696c1fd5",
     "reference": "IKS-0007",
     "title": "Göksu Manzaralı Sezonluk Villa",
     "slug": "agva-portfoy-7",
@@ -681,6 +723,7 @@
     "location": "Göksu",
     "district": "Şile / İstanbul",
     "price": 185000,
+    "oldPrice": 0,
     "currency": "TRY",
     "rooms": "4+1",
     "bathrooms": 1,
@@ -698,13 +741,14 @@
       "/images/coast-house.webp"
     ],
     "featured": false,
+    "urgent": false,
     "published": true,
     "isDemo": true,
     "createdAt": "2026-07-16T06:30:00.000Z",
     "updatedAt": "2026-07-16T06:36:00.000Z"
   },
   {
-    "id": "d753ead1-2575-491d-9a46-7a4e20a73868",
+    "id": "c4b9c654-433b-47da-9993-b5bf14b893ee",
     "reference": "IKS-0006",
     "title": "Bucaklı'da Yatırımlık İmarlı Arsa",
     "slug": "agva-portfoy-6",
@@ -713,6 +757,7 @@
     "location": "Bucaklı",
     "district": "Şile / İstanbul",
     "price": 9800000,
+    "oldPrice": 0,
     "currency": "TRY",
     "rooms": "—",
     "bathrooms": 0,
@@ -730,13 +775,14 @@
       "/images/forest-house.webp"
     ],
     "featured": false,
+    "urgent": true,
     "published": true,
     "isDemo": true,
     "createdAt": "2026-07-16T06:30:00.000Z",
     "updatedAt": "2026-07-16T06:35:00.000Z"
   },
   {
-    "id": "6ffa9060-dabd-4475-8a74-f972a01b39b5",
+    "id": "a356ef3f-2d47-4773-b57f-16f850c10ef5",
     "reference": "IKS-0005",
     "title": "Kurfallı'da Orman İçinde Taş Ev",
     "slug": "agva-portfoy-5",
@@ -745,6 +791,7 @@
     "location": "Kurfallı",
     "district": "Şile / İstanbul",
     "price": 22400000,
+    "oldPrice": 25535000,
     "currency": "TRY",
     "rooms": "4+1",
     "bathrooms": 2,
@@ -762,6 +809,7 @@
       "/images/goksu-house.webp"
     ],
     "featured": false,
+    "urgent": false,
     "published": true,
     "isDemo": true,
     "createdAt": "2026-07-16T06:30:00.000Z",

@@ -16,5 +16,8 @@ export async function POST(request: Request) {
   if (!input.title || !input.location || !input.propertyType || !input.purpose) {
     return NextResponse.json({ error: "Zorunlu alanlar eksik." }, { status: 400 });
   }
+  if (input.oldPrice > 0 && input.oldPrice <= input.price) {
+    return NextResponse.json({ error: "Eski fiyat yeni fiyattan yüksek olmalıdır." }, { status: 400 });
+  }
   return NextResponse.json(await createListing(input), { status: 201 });
 }

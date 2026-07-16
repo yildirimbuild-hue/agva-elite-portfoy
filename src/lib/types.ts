@@ -11,6 +11,7 @@ export type Listing = {
   location: string;
   district: string;
   price: number;
+  oldPrice: number;
   currency: "TRY" | "USD" | "EUR";
   rooms: string;
   bathrooms: number;
@@ -22,10 +23,22 @@ export type Listing = {
   features: string[];
   images: string[];
   featured: boolean;
+  urgent: boolean;
   published: boolean;
   isDemo: boolean;
   createdAt: string;
   updatedAt: string;
+};
+
+export type CompanyProfile = {
+  name: string;
+  shortName: string;
+  serviceArea: string;
+  description: string;
+  services: string[];
+  workingHours: string;
+  whatsappNumber: string;
+  phoneNumber: string;
 };
 
 export type ListingInput = Omit<Listing, "id" | "reference" | "slug" | "createdAt" | "updatedAt"> & {
