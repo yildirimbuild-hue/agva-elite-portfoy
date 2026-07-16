@@ -50,6 +50,13 @@ export type AdminSiteSettings = {
   phoneNumber: string;
   hasApiKey: boolean;
   apiKeySource: "managed" | "environment" | "none";
+  voiceEnabled: boolean;
+  elevenLabsVoiceId: string;
+  elevenLabsModel: string;
+  voiceStability: number;
+  voiceSimilarity: number;
+  hasElevenLabsApiKey: boolean;
+  elevenLabsApiKeySource: "managed" | "environment" | "none";
   updatedAt: string | null;
 };
 

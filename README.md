@@ -44,12 +44,18 @@ NEXT_PUBLIC_WHATSAPP_NUMBER=905XXXXXXXXX
 NEXT_PUBLIC_PHONE_NUMBER=+905XXXXXXXXX
 DEEPSEEK_API_KEY=your-deepseek-api-key
 DEEPSEEK_MODEL=deepseek-v4-flash
+ELEVENLABS_API_KEY=your-elevenlabs-api-key
+ELEVENLABS_VOICE_ID=KAGDtM2gzDrjWlUp2KNe
+ELEVENLABS_MODEL=eleven_flash_v2_5
 BLOB_READ_WRITE_TOKEN=vercel-blob-read-write-token
 ```
 
 WhatsApp numarası yalnız rakamlardan ve ülke koduyla yazılmalıdır. API anahtarı
 yalnız sunucuda kalır; tarayıcıya gönderilmez. Numara veya anahtar yokken arayüz
 sahte bir iletişim noktası üretmez ve eksik yapılandırmayı açıkça bildirir.
+ElevenLabs anahtarı alternatif olarak admin panelinden AES-256-GCM ile şifreli
+biçimde kaydedilebilir. Sesli yanıtlar Deniz sesiyle başlar; ses kimliği, model ve
+ses karakteri yine admin panelinden değiştirilebilir.
 
 ## Veri
 

@@ -7,10 +7,25 @@ type ListingAction = { type: "open_listing"; reference: string; title: string; h
 type AdminDraft = Partial<ListingInput>;
 type AdminMode = "public" | "awaiting_password" | "ready" | "drafting";
 type AdminTarget = Pick<Listing, "id" | "reference" | "title" | "slug" | "published">;
-type Message = { role: "user" | "assistant"; content: string; actions?: ListingAction[]; adminDraft?: AdminDraft; adminDraftKind?: "create" | "edit"; adminDelete?: AdminTarget };
+type Message = { role: "user" | "assistant"; content: string; actions?: ListingAction[]; voiceToken?: string; adminDraft?: AdminDraft; adminDraftKind?: "create" | "edit"; adminDelete?: AdminTarget };
 type ListingContext = { reference: string; title: string };
 type WizardStep = "title" | "price" | "images" | "purpose" | "propertyType" | "location" | "rooms" | "areas" | "description" | "features" | "oldPrice" | "labels" | "review";
 type WizardChoice = { label: string; value: string };
+type VoiceConfig = { enabled: boolean; ready: boolean; voiceName: string };
+type SpeechResult = { isFinal: boolean; 0: { transcript: string } };
+type SpeechRecognitionEventLike = Event & { resultIndex: number; results: ArrayLike<SpeechResult> };
+type SpeechRecognitionErrorLike = Event & { error?: string };
+type SpeechRecognitionLike = {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorLike) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  abort: () => void;
+};
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
 
 const wizardSteps: WizardStep[] = ["title", "price", "images", "purpose", "propertyType", "location", "rooms", "areas", "description", "features", "oldPrice", "labels", "review"];
 
@@ -114,9 +129,20 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
   const [pendingDelete, setPendingDelete] = useState<AdminTarget | null>(null);
   const [savingDraft, setSavingDraft] = useState(false);
   const [error, setError] = useState("");
+  const [voiceConfig, setVoiceConfig] = useState<VoiceConfig>({ enabled: false, ready: false, voiceName: "Deniz" });
+  const [voiceMode, setVoiceMode] = useState(false);
+  const [listening, setListening] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
+  const [voiceError, setVoiceError] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const redirectTimerRef = useRef<number | null>(null);
   const userHandledRef = useRef(false);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioUrlRef = useRef<string | null>(null);
+  const audioAbortRef = useRef<AbortController | null>(null);
+  const audioDoneRef = useRef<((played: boolean) => void) | null>(null);
+  const voiceModeRef = useRef(false);
 
   const contextualSuggestions = listing ? [
     "Bu ilanın öne çıkan özellikleri neler?",
@@ -134,8 +160,158 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, loading, error, redirecting]);
 
+  useEffect(() => {
+    fetch("/api/voice/config", { cache: "no-store" })
+      .then(async (response) => response.ok ? response.json() as Promise<VoiceConfig> : null)
+      .then((config) => {
+        if (!config) return;
+        setVoiceConfig(config);
+        const remembered = window.localStorage.getItem("ikisu-ai-voice") === "on";
+        setVoiceMode(config.ready && remembered);
+        voiceModeRef.current = config.ready && remembered;
+      })
+      .catch(() => null);
+  }, []);
+
+  function stopAudio() {
+    audioAbortRef.current?.abort();
+    audioAbortRef.current = null;
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = "";
+      audioRef.current = null;
+    }
+    if (audioUrlRef.current) {
+      URL.revokeObjectURL(audioUrlRef.current);
+      audioUrlRef.current = null;
+    }
+    audioDoneRef.current?.(false);
+    audioDoneRef.current = null;
+    setSpeaking(false);
+  }
+
+  async function playVoice(text: string, token: string) {
+    stopAudio();
+    setVoiceError("");
+    const controller = new AbortController();
+    audioAbortRef.current = controller;
+    try {
+      const response = await fetch("/api/voice/speak", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, token }),
+        signal: controller.signal,
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error ?? "Sesli yanıt hazırlanamadı.");
+      }
+      const url = URL.createObjectURL(await response.blob());
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      audioUrlRef.current = url;
+      setSpeaking(true);
+      return await new Promise<boolean>((resolve) => {
+        audioDoneRef.current = resolve;
+        const finish = (played: boolean) => {
+          if (audioDoneRef.current !== resolve) return;
+          audioDoneRef.current = null;
+          audioRef.current = null;
+          if (audioUrlRef.current === url) {
+            URL.revokeObjectURL(url);
+            audioUrlRef.current = null;
+          }
+          setSpeaking(false);
+          resolve(played);
+        };
+        audio.addEventListener("ended", () => finish(true), { once: true });
+        audio.addEventListener("error", () => finish(false), { once: true });
+        audio.play().catch(() => {
+          setVoiceError("Tarayıcı sesi otomatik başlatmadı. Yanıttaki ‘Dinle’ düğmesine dokunun.");
+          finish(false);
+        });
+      });
+    } catch (voiceFailure) {
+      if ((voiceFailure as Error).name !== "AbortError") setVoiceError(voiceFailure instanceof Error ? voiceFailure.message : "Sesli yanıt hazırlanamadı.");
+      setSpeaking(false);
+      return false;
+    } finally {
+      if (audioAbortRef.current === controller) audioAbortRef.current = null;
+    }
+  }
+
+  function toggleVoiceMode() {
+    if (!voiceConfig.ready) {
+      setVoiceError(voiceConfig.enabled ? "ElevenLabs anahtarı eksik. Yönetici panelinden ekleyin." : "Sesli danışman yönetici ayarlarından henüz açılmadı.");
+      return;
+    }
+    const next = !voiceModeRef.current;
+    voiceModeRef.current = next;
+    setVoiceMode(next);
+    window.localStorage.setItem("ikisu-ai-voice", next ? "on" : "off");
+    if (!next) stopAudio();
+    setVoiceError("");
+  }
+
+  function startListening() {
+    stopAudio();
+    setVoiceError("");
+    const speechWindow = window as unknown as {
+      SpeechRecognition?: SpeechRecognitionConstructor;
+      webkitSpeechRecognition?: SpeechRecognitionConstructor;
+    };
+    const Recognition = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
+    if (!Recognition) {
+      setVoiceError("Bu tarayıcı Türkçe mikrofonla konuşmayı desteklemiyor. Chrome veya Edge kullanabilirsiniz.");
+      return;
+    }
+    if (voiceConfig.ready) {
+      voiceModeRef.current = true;
+      setVoiceMode(true);
+      window.localStorage.setItem("ikisu-ai-voice", "on");
+    }
+    recognitionRef.current?.abort();
+    const recognition = new Recognition();
+    recognitionRef.current = recognition;
+    recognition.lang = "tr-TR";
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.onresult = (event) => {
+      let transcript = "";
+      let complete = false;
+      for (let index = event.resultIndex; index < event.results.length; index += 1) {
+        transcript += event.results[index][0]?.transcript ?? "";
+        complete ||= event.results[index].isFinal;
+      }
+      setInput(transcript.trim());
+      if (complete && transcript.trim()) {
+        recognition.abort();
+        void ask(transcript);
+      }
+    };
+    recognition.onerror = (event) => {
+      if (event.error !== "aborted" && event.error !== "no-speech") setVoiceError("Mikrofon kullanılamadı. Tarayıcı izinlerini kontrol edin.");
+      setListening(false);
+    };
+    recognition.onend = () => {
+      if (recognitionRef.current === recognition) recognitionRef.current = null;
+      setListening(false);
+    };
+    try {
+      recognition.start();
+      setListening(true);
+    } catch {
+      setVoiceError("Mikrofon başlatılamadı. Lütfen yeniden deneyin.");
+      setListening(false);
+    }
+  }
+
   useEffect(() => () => {
     if (redirectTimerRef.current) window.clearTimeout(redirectTimerRef.current);
+    recognitionRef.current?.abort();
+    stopAudio();
+    // stopAudio yalnız kaynak temizliği yapar; bu effect bileşen kaldırılırken çalışır.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -195,6 +371,10 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
     userHandledRef.current = true;
     if (listing) {
       try { window.sessionStorage.setItem(`ikisu-ai-offer:${listing.reference}`, "handled"); } catch { /* no-op */ }
+    }
+    if (!openPanel) {
+      recognitionRef.current?.abort();
+      stopAudio();
     }
     setOpen(openPanel);
   }
@@ -733,13 +913,16 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
           : payload.error ?? "Danışmana ulaşılamadı.");
         return;
       }
-      const answer = { role: "assistant" as const, content: payload.answer, actions: payload.actions as ListingAction[] | undefined };
+      const answer = { role: "assistant" as const, content: payload.answer, actions: payload.actions as ListingAction[] | undefined, voiceToken: typeof payload.voiceToken === "string" ? payload.voiceToken : undefined };
       setMessages((current) => [...current, answer]);
       if (payload.autoOpen && payload.actions?.[0]?.href) {
         setRedirecting(true);
+        if (voiceModeRef.current && voiceConfig.ready && answer.voiceToken) await playVoice(answer.content, answer.voiceToken);
         redirectTimerRef.current = window.setTimeout(() => {
           window.location.assign(payload.actions[0].href);
-        }, 1600);
+        }, voiceModeRef.current && answer.voiceToken ? 450 : 1600);
+      } else if (voiceModeRef.current && voiceConfig.ready && answer.voiceToken) {
+        void playVoice(answer.content, answer.voiceToken);
       }
     } catch {
       setError("Bağlantı kurulamadı. Lütfen tekrar deneyin.");
@@ -767,6 +950,7 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
             {messages.map((message, index) => (
               <div className={`ai-message ${message.role}`} key={`${message.role}-${index}`}>
                 {message.content}
+                {message.role === "assistant" && message.voiceToken && voiceConfig.ready && <button className="ai-listen-message" type="button" onClick={() => void playVoice(message.content, message.voiceToken!)}>{speaking ? "■ Durdur" : "▶ Dinle"}</button>}
                 {message.actions && message.actions.length > 0 && <div className="ai-listing-actions">{message.actions.map((action) => <a href={action.href} key={action.reference}><span>{action.reference}</span><strong>{action.title}</strong><em>İlanı aç →</em></a>)}</div>}
                 {message.adminDraft && <div className="ai-admin-draft">
                   <div className="ai-admin-draft-title"><span>{message.adminDraftKind === "edit" ? `${editingTarget?.reference ?? "İLAN"} · DEĞİŞİKLİK TASLAĞI` : "YENİ İLAN TASLAĞI"}</span><strong>{message.adminDraft.title}</strong></div>
@@ -818,6 +1002,12 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
             {wizardChoices(wizardStep).length > 0 && <div className="ai-wizard-choices">{wizardChoices(wizardStep).map((choice) => <button type="button" key={choice.value} disabled={savingDraft} onClick={() => void answerListingWizard(choice.value)}>{choice.label}</button>)}</div>}
             <div className="ai-wizard-tools">{wizardSteps.indexOf(wizardStep) > 0 && <button type="button" onClick={() => void answerListingWizard("geri")}>← Geri</button>}<button type="button" onClick={() => void answerListingWizard("özet")}>Özet</button><button type="button" onClick={cancelListingDraft}>İptal</button></div>
           </div>}
+          {adminMode === "public" && <div className="ai-voice-bar">
+            <button className={listening ? "listening" : ""} type="button" disabled={loading || redirecting} onClick={listening ? () => recognitionRef.current?.abort() : startListening}>{listening ? "● Dinliyorum…" : "🎙 Konuş"}</button>
+            <button className={voiceMode ? "active" : ""} type="button" onClick={toggleVoiceMode}>{voiceMode ? `🔊 ${voiceConfig.voiceName} açık` : "🔈 Sesli yanıt"}</button>
+            {speaking && <button className="stop" type="button" onClick={stopAudio}>■ Sesi kes</button>}
+          </div>}
+          {voiceError && <div className="ai-voice-error">{voiceError}</div>}
           <form onSubmit={submit}>
             <input
               type={adminMode === "awaiting_password" ? "password" : "text"}

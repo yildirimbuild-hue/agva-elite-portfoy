@@ -36,6 +36,7 @@ export function AdminPanel({ initialListings, initialSettings }: { initialListin
   const [listings, setListings] = useState(initialListings);
   const [settings, setSettings] = useState(initialSettings);
   const [apiKey, setApiKey] = useState("");
+  const [elevenLabsApiKey, setElevenLabsApiKey] = useState("");
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsMessage, setSettingsMessage] = useState("");
   const [query, setQuery] = useState("");
@@ -179,13 +180,20 @@ export function AdminPanel({ initialListings, initialSettings }: { initialListin
           assistantInstructions: settings.assistantInstructions,
           whatsappNumber: settings.whatsappNumber,
           phoneNumber: settings.phoneNumber,
+          voiceEnabled: settings.voiceEnabled,
+          elevenLabsVoiceId: settings.elevenLabsVoiceId,
+          elevenLabsModel: settings.elevenLabsModel,
+          voiceStability: settings.voiceStability,
+          voiceSimilarity: settings.voiceSimilarity,
           ...(apiKey.trim() ? { apiKey: apiKey.trim() } : {}),
+          ...(elevenLabsApiKey.trim() ? { elevenLabsApiKey: elevenLabsApiKey.trim() } : {}),
         }),
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error ?? "Ayarlar kaydedilemedi.");
       setSettings(payload);
       setApiKey("");
+      setElevenLabsApiKey("");
       setSettingsMessage("Site ve yapay zekâ ayarları kaydedildi.");
       router.refresh();
     } catch (error) {
@@ -226,6 +234,56 @@ export function AdminPanel({ initialListings, initialSettings }: { initialListin
       setSettingsMessage("Yönetilen API anahtarı kaldırıldı.");
     } catch (error) {
       setSettingsMessage(error instanceof Error ? error.message : "API anahtarı kaldırılamadı.");
+    } finally {
+      setSettingsSaving(false);
+    }
+  }
+
+  async function testElevenLabs() {
+    setSettingsSaving(true);
+    setSettingsMessage("Deniz sesi hazırlanıyor...");
+    try {
+      const response = await fetch("/api/admin/settings/voice-test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          voiceId: settings.elevenLabsVoiceId,
+          model: settings.elevenLabsModel,
+          stability: settings.voiceStability,
+          similarity: settings.voiceSimilarity,
+          ...(elevenLabsApiKey.trim() ? { apiKey: elevenLabsApiKey.trim() } : {}),
+        }),
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error ?? "Ses bağlantısı test edilemedi.");
+      }
+      const latency = response.headers.get("X-Voice-Latency");
+      const url = URL.createObjectURL(await response.blob());
+      const audio = new Audio(url);
+      audio.addEventListener("ended", () => URL.revokeObjectURL(url), { once: true });
+      audio.addEventListener("error", () => URL.revokeObjectURL(url), { once: true });
+      await audio.play();
+      setSettingsMessage(`ElevenLabs bağlantısı başarılı${latency ? ` · ${latency} ms` : ""} · Deniz sesi oynatılıyor.`);
+    } catch (error) {
+      setSettingsMessage(error instanceof Error ? error.message : "Ses bağlantısı test edilemedi.");
+    } finally {
+      setSettingsSaving(false);
+    }
+  }
+
+  async function clearManagedElevenLabsApiKey() {
+    if (!window.confirm("Admin panelinden kaydedilmiş ElevenLabs anahtarı kaldırılsın mı? Ortam değişkenindeki anahtar varsa tekrar o kullanılır.")) return;
+    setSettingsSaving(true);
+    try {
+      const response = await fetch("/api/admin/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ clearElevenLabsApiKey: true, voiceEnabled: false }) });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? "ElevenLabs anahtarı kaldırılamadı.");
+      setSettings(payload);
+      setElevenLabsApiKey("");
+      setSettingsMessage("Yönetilen ElevenLabs anahtarı kaldırıldı ve sesli yanıt kapatıldı.");
+    } catch (error) {
+      setSettingsMessage(error instanceof Error ? error.message : "ElevenLabs anahtarı kaldırılamadı.");
     } finally {
       setSettingsSaving(false);
     }
@@ -287,6 +345,20 @@ export function AdminPanel({ initialListings, initialSettings }: { initialListin
               <label className="span-2"><span>AI davranış talimatı</span><textarea rows={5} maxLength={1500} value={settings.assistantInstructions} onChange={(event) => setSettings((current) => ({ ...current, assistantInstructions: event.target.value }))} placeholder="Örneğin: Önce bütçe ve bölgeyi sor; yanıtları kısa tut." /><small>{settings.assistantInstructions.length}/1500 · Güvenlik ve doğruluk kuralları değiştirilemez.</small></label>
             </div>
             <div className="admin-settings-actions"><button type="button" disabled={settingsSaving} onClick={() => void testDeepSeek()}>Bağlantıyı test et</button>{settings.apiKeySource === "managed" && <button className="danger" type="button" disabled={settingsSaving} onClick={() => void clearManagedApiKey()}>Yönetilen anahtarı kaldır</button>}</div>
+          </section>
+
+          <section className="admin-settings-card">
+            <header><div><span>DOĞAL SES</span><h2>ElevenLabs sesli danışman</h2></div><strong className={settings.voiceEnabled ? "settings-status on" : "settings-status"}>{settings.voiceEnabled ? "Aktif" : "Kapalı"}</strong></header>
+            <p>Asistan yanıtlarını doğal bir Türkçe kadın sesiyle okur. Varsayılan ses Deniz’dir. API anahtarı DeepSeek anahtarı gibi sunucuda şifreli saklanır ve tarayıcıya geri gönderilmez.</p>
+            <div className="admin-settings-grid">
+              <label className="check-field span-2"><input type="checkbox" checked={settings.voiceEnabled} onChange={(event) => setSettings((current) => ({ ...current, voiceEnabled: event.target.checked }))} /><span>Sesli yanıt özelliğini aktif tut</span></label>
+              <label><span>Ses kimliği</span><input value={settings.elevenLabsVoiceId} onChange={(event) => setSettings((current) => ({ ...current, elevenLabsVoiceId: event.target.value }))} placeholder="KAGDtM2gzDrjWlUp2KNe" /><small>Varsayılan: Deniz · genç, sıcak ve doğal Türkçe ton</small></label>
+              <label><span>ElevenLabs modeli</span><select value={settings.elevenLabsModel} onChange={(event) => setSettings((current) => ({ ...current, elevenLabsModel: event.target.value }))}><option value="eleven_flash_v2_5">Flash v2.5 · hızlı</option><option value="eleven_multilingual_v2">Multilingual v2 · dengeli</option><option value="eleven_v3">Eleven v3 · en etkileyici</option></select></label>
+              <label><span>Kararlılık · %{Math.round(settings.voiceStability * 100)}</span><input type="range" min="0" max="1" step="0.05" value={settings.voiceStability} onChange={(event) => setSettings((current) => ({ ...current, voiceStability: Number(event.target.value) }))} /></label>
+              <label><span>Ses benzerliği · %{Math.round(settings.voiceSimilarity * 100)}</span><input type="range" min="0" max="1" step="0.05" value={settings.voiceSimilarity} onChange={(event) => setSettings((current) => ({ ...current, voiceSimilarity: Number(event.target.value) }))} /></label>
+              <label className="span-2"><span>Yeni ElevenLabs API anahtarı</span><input type="password" autoComplete="new-password" value={elevenLabsApiKey} onChange={(event) => setElevenLabsApiKey(event.target.value)} placeholder={settings.hasElevenLabsApiKey ? `Anahtar mevcut · ${settings.elevenLabsApiKeySource === "managed" ? "admin ayarı" : "ortam değişkeni"}` : "sk_..."} /><small>Test düğmesi, henüz kaydetmediğiniz anahtarı da güvenli biçimde deneyebilir.</small></label>
+            </div>
+            <div className="admin-settings-actions"><button type="button" disabled={settingsSaving} onClick={() => void testElevenLabs()}>Deniz sesini dinle ve test et</button>{settings.elevenLabsApiKeySource === "managed" && <button className="danger" type="button" disabled={settingsSaving} onClick={() => void clearManagedElevenLabsApiKey()}>Yönetilen ses anahtarını kaldır</button>}</div>
           </section>
 
           <section className="admin-settings-card">

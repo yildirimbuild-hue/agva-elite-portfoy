@@ -2027,6 +2027,15 @@ img {
 @keyframes aiPulse { to { opacity: .25; } }
 .ai-suggestions { padding: 0 16px 12px; display: flex; flex-wrap: wrap; gap: 6px; }
 .ai-suggestions button { padding: 8px 9px; color: #405149; border: 1px solid #d8d3c8; background: white; font-size: 8px; cursor: pointer; }
+.ai-voice-bar { padding: 0 12px 9px; display: flex; flex-wrap: wrap; gap: 6px; }
+.ai-voice-bar button { min-height: 36px; padding: 8px 10px; flex: 1; color: #405149; border: 1px solid #d6d0c4; background: white; font: 700 8px var(--sans); cursor: pointer; }
+.ai-voice-bar button.active { color: #163f2f; border-color: #a6bbaa; background: #e1ece2; }
+.ai-voice-bar button.listening { color: white; border-color: #a63d33; background: #b54339; animation: voicePulse 1s ease-in-out infinite alternate; }
+.ai-voice-bar button.stop { color: #893a32; border-color: #dfbbb5; background: #fff6f4; }
+.ai-voice-bar button:disabled { opacity: .45; cursor: wait; }
+.ai-voice-error { margin: 0 12px 8px; padding: 8px 10px; color: #7b3b32; border: 1px solid #e0bbb5; background: #f4dfdc; font-size: 8px; line-height: 1.5; }
+.ai-listen-message { margin-top: 8px; padding: 6px 8px; display: block; color: var(--forest); border: 1px solid #d9d4ca; background: #f7f4ed; font: 700 7px var(--sans); letter-spacing: .06em; text-transform: uppercase; cursor: pointer; }
+@keyframes voicePulse { to { box-shadow: 0 0 0 4px rgba(181,67,57,.13); } }
 .ai-panel form { margin: 0 12px; display: flex; border: 1px solid #d5d0c5; background: white; }
 .ai-panel form input { min-width: 0; min-height: 49px; padding: 0 13px; flex: 1; border: 0; outline: 0; background: transparent; font-size: 11px; }
 .ai-panel form button { width: 42px; height: 42px; margin: 3px; color: white; border: 0; border-radius: 50%; background: var(--forest); font-size: 18px; cursor: pointer; }
@@ -2055,7 +2064,7 @@ img {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .typing i,.ai-redirecting span { animation: none; }
+  .typing i,.ai-redirecting span,.ai-voice-bar button.listening { animation: none; }
 }
 
 /* Dedicated listing pages and AI navigation actions */
@@ -2212,7 +2221,8 @@ img {
 .admin-settings-grid .span-2 { grid-column: span 2; }
 .admin-settings-grid label { display: flex; flex-direction: column; gap: 9px; }
 .admin-settings-grid label > span { font-size: 8px; letter-spacing: .11em; text-transform: uppercase; }
-.admin-settings-grid input,.admin-settings-grid textarea { width: 100%; min-height: 48px; padding: 12px 14px; color: #1d2925; border: 1px solid #d8d4ca; background: #fbfaf7; font: 13px var(--sans); }
+.admin-settings-grid input,.admin-settings-grid select,.admin-settings-grid textarea { width: 100%; min-height: 48px; padding: 12px 14px; color: #1d2925; border: 1px solid #d8d4ca; background: #fbfaf7; font: 13px var(--sans); }
+.admin-settings-grid input[type="range"] { padding: 0; accent-color: var(--forest); }
 .admin-settings-grid textarea { min-height: 130px; resize: vertical; line-height: 1.6; }
 .admin-settings-grid small { color: #818a85; font-size: 8px; line-height: 1.6; }
 .admin-settings-actions { margin-top: 18px; display: flex; align-items: center; flex-wrap: wrap; gap: 9px; }
@@ -2264,7 +2274,7 @@ button,a,input,select,textarea { touch-action: manipulation; }
   .admin-settings-card > header { flex-direction: column; gap: 12px; }
   .admin-settings-grid { grid-template-columns: 1fr; }
   .admin-settings-grid .span-2 { grid-column: span 1; }
-  .admin-settings-grid input,.admin-settings-grid textarea { font-size: 16px; }
+  .admin-settings-grid input,.admin-settings-grid select,.admin-settings-grid textarea { font-size: 16px; }
   .admin-settings-actions { align-items: stretch; flex-direction: column; }
   .admin-settings-actions button { width: 100%; }
   .admin-settings-save { padding: 20px 17px; align-items: stretch; flex-direction: column; }
@@ -2275,6 +2285,7 @@ button,a,input,select,textarea { touch-action: manipulation; }
   .ai-panel header { padding: 13px 14px; }
   .ai-messages { padding: 12px; }
   .ai-suggestions { padding: 0 12px 10px; max-height: 92px; overflow-y: auto; }
+  .ai-voice-bar button { min-height: 43px; font-size: 9px; }
   .ai-panel form input { font-size: 16px; }
   .ai-wizard-card { max-height: 245px; overflow-y: auto; }
   .ai-wizard-choices button { min-height: 44px; }
