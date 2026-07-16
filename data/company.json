@@ -1,0 +1,15 @@
+{
+  "name": "İKİSU Emlak",
+  "shortName": "İKİSU",
+  "serviceArea": "Ağva ve Şile",
+  "description": "Ağva ve Şile bölgesindeki satılık, kiralık ve yatırım portföylerini anlaşılır biçimde sunan yerel emlak danışmanlığı.",
+  "services": [
+    "Satılık ve kiralık portföy danışmanlığı",
+    "Villa, müstakil ev, daire, arsa ve ticari gayrimenkul",
+    "Bölge ve yatırım ihtiyacına göre portföy eşleştirme",
+    "Mülk sahipleri için portföy sunumu"
+  ],
+  "workingHours": "Randevu ve güncel portföy bilgisi için doğrudan iletişime geçin.",
+  "whatsappNumber": "",
+  "phoneNumber": ""
+}

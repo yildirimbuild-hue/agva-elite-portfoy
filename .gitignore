@@ -9,6 +9,8 @@
 .DS_Store
 *.log
 .env*
+!.env.example
+/data/site-settings.json
 
 # typescript
 *.tsbuildinfo
