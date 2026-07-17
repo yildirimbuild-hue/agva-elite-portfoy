@@ -1839,7 +1839,7 @@ img {
 .status-pill { padding:7px 9px; color:#71592f; border:0; border-radius:999px; background:#eee3ca; font-size:8px; cursor:pointer; }
 .status-pill.published { color:#315844; background:#dceadf; }
 .admin-row-actions { display:flex; gap:7px; }
-.admin-row-actions button { padding:7px 8px; border:1px solid #ddd9cf; background:white; font-size:8px; cursor:pointer; }
+.admin-row-actions button, .admin-row-actions a { padding:7px 8px; border:1px solid #ddd9cf; background:white; font-size:8px; cursor:pointer; color:inherit; text-decoration:none; }
 .admin-row-actions .danger { color:#a33c32; }
 .admin-editor { position:fixed; inset:0; z-index:200; display:flex; justify-content:flex-end; }
 .admin-editor-backdrop { position:absolute; inset:0; border:0; background:rgba(4,15,11,.68); }

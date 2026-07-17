@@ -1,6 +1,6 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 
-export const DEFAULT_ELEVENLABS_VOICE_ID = "KAGDtM2gzDrjWlUp2KNe";
+export const DEFAULT_ELEVENLABS_VOICE_ID = "EXAVITQu4vr4xnSDxMaL";
 export const DEFAULT_ELEVENLABS_MODEL = "eleven_flash_v2_5";
 
 type SynthesisOptions = {

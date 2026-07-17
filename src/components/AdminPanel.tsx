@@ -2,7 +2,7 @@
 
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { AdminSiteSettings, Listing, ListingInput, ListingPurpose, PropertyType } from "@/lib/types";
+import type { AdminSiteSettings, Lead, Listing, ListingInput, ListingPurpose, PropertyType } from "@/lib/types";
 
 const emptyForm: ListingInput = {
   title: "",
@@ -30,10 +30,13 @@ const emptyForm: ListingInput = {
 
 const formatPrice = (listing: Listing) => new Intl.NumberFormat("tr-TR", { style: "currency", currency: listing.currency, maximumFractionDigits: 0 }).format(listing.price);
 
-export function AdminPanel({ initialListings, initialSettings }: { initialListings: Listing[]; initialSettings: AdminSiteSettings }) {
+export function AdminPanel({ initialListings, initialSettings, initialLeads }: { initialListings: Listing[]; initialSettings: AdminSiteSettings; initialLeads: Lead[] }) {
   const router = useRouter();
-  const [view, setView] = useState<"listings" | "settings">("listings");
+  const [view, setView] = useState<"listings" | "settings" | "leads">("listings");
   const [listings, setListings] = useState(initialListings);
+  const [leads, setLeads] = useState(initialLeads);
+  const [leadsMessage, setLeadsMessage] = useState("");
+  const [leadsBusy, setLeadsBusy] = useState(false);
   const [settings, setSettings] = useState(initialSettings);
   const [apiKey, setApiKey] = useState("");
   const [elevenLabsApiKey, setElevenLabsApiKey] = useState("");
@@ -289,11 +292,50 @@ export function AdminPanel({ initialListings, initialSettings }: { initialListin
     }
   }
 
+  async function refreshLeads() {
+    setLeadsBusy(true);
+    try {
+      const response = await fetch("/api/admin/leads", { cache: "no-store" });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload?.error ?? "Talepler yüklenemedi.");
+      setLeads(payload);
+      setLeadsMessage("");
+    } catch (error) {
+      setLeadsMessage(error instanceof Error ? error.message : "Talepler yüklenemedi.");
+    } finally {
+      setLeadsBusy(false);
+    }
+  }
+
+  async function removeLead(lead: Lead) {
+    if (!window.confirm(`${lead.name || lead.phone} talebini silmek istediğinize emin misiniz?`)) return;
+    setLeadsBusy(true);
+    try {
+      const response = await fetch("/api/admin/leads", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: lead.id }) });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload?.error ?? "Talep silinemedi.");
+      setLeads((current) => current.filter((item) => item.id !== lead.id));
+      setLeadsMessage("Talep silindi.");
+    } catch (error) {
+      setLeadsMessage(error instanceof Error ? error.message : "Talep silinemedi.");
+    } finally {
+      setLeadsBusy(false);
+    }
+  }
+
+  function leadWhatsappLink(lead: Lead) {
+    let digits = lead.phone.replace(/\D/g, "");
+    if (digits.startsWith("0")) digits = `9${digits}`;
+    if (digits.length === 10 && digits.startsWith("5")) digits = `90${digits}`;
+    const text = encodeURIComponent("Merhaba, İKİSU Emlak portföy danışmanınızım. Sitemizdeki talebiniz hakkında yazıyorum.");
+    return `https://wa.me/${digits}?text=${text}`;
+  }
+
   return (
     <main className="admin-shell">
       <aside className="admin-sidebar">
         <a className="admin-brand" href="/"><span>İK</span><div><strong>İKİSU</strong><small>EMLAK YÖNETİMİ</small></div></a>
-        <nav><button className={view === "listings" ? "active" : ""} type="button" onClick={() => { setView("listings"); setEditorOpen(false); }}>▦ Portföy</button><button className={view === "settings" ? "active" : ""} type="button" onClick={() => { setView("settings"); setEditorOpen(false); }}>⚙ Site ve AI ayarları</button><a href="/" target="_blank" rel="noreferrer">↗ Siteyi görüntüle</a></nav>
+        <nav><button className={view === "listings" ? "active" : ""} type="button" onClick={() => { setView("listings"); setEditorOpen(false); }}>▦ Portföy</button><button className={view === "leads" ? "active" : ""} type="button" onClick={() => { setView("leads"); setEditorOpen(false); void refreshLeads(); }}>☎ Müşteri talepleri{leads.length > 0 ? ` (${leads.length})` : ""}</button><button className={view === "settings" ? "active" : ""} type="button" onClick={() => { setView("settings"); setEditorOpen(false); }}>⚙ Site ve AI ayarları</button><a href="/" target="_blank" rel="noreferrer">↗ Siteyi görüntüle</a></nav>
         <div className="admin-sidebar-foot"><button type="button" onClick={logout}>Oturumu kapat</button></div>
       </aside>
 
@@ -330,6 +372,35 @@ export function AdminPanel({ initialListings, initialSettings }: { initialListin
           </table>
         </div>
       </section>
+
+      {view === "leads" && <section className="admin-main">
+        <header className="admin-topbar"><div><span>YAPAY ZEKÂ DANIŞMANI</span><h1>Müşteri talepleri</h1></div><button className="admin-primary" type="button" disabled={leadsBusy} onClick={() => void refreshLeads()}>{leadsBusy ? "Yükleniyor..." : "↻ Yenile"}</button></header>
+        {leadsMessage && <div className="admin-message">{leadsMessage}<button type="button" onClick={() => setLeadsMessage("")}>×</button></div>}
+        {leads.length === 0 ? (
+          <div className="admin-message">Henüz kayıtlı müşteri talebi yok. Yapay zekâ danışmanı, ziyaretçi telefon numarasını paylaştığında talebi buraya otomatik kaydeder.</div>
+        ) : (
+          <div className="admin-table-wrap">
+            <table className="admin-table">
+              <thead><tr><th>Tarih</th><th>Müşteri</th><th>İhtiyaç</th><th>İlgilendiği ilanlar</th><th>İşlem</th></tr></thead>
+              <tbody>{leads.map((lead) => (
+                <tr key={lead.id}>
+                  <td>{new Date(lead.createdAt).toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" })}</td>
+                  <td><div className="admin-listing-cell"><div><strong>{lead.name || "İsim alınamadı"}</strong><span><a href={`tel:${lead.phone}`}>{lead.phone}</a></span></div></div></td>
+                  <td>
+                    <div className="admin-price-cell">
+                      {lead.kind === "randevu" && <span className="admin-urgent-pill">Randevu{lead.appointmentTime ? ` · ${lead.appointmentTime}` : ""}</span>}
+                      {lead.summary && <strong>{lead.summary}</strong>}
+                      <span>{[lead.budget, lead.region, lead.propertyType].filter(Boolean).join(" · ") || "Detay verilmedi"}</span>
+                    </div>
+                  </td>
+                  <td>{lead.listingReferences.length ? lead.listingReferences.join(", ") : "—"}</td>
+                  <td><div className="admin-row-actions"><a href={leadWhatsappLink(lead)} target="_blank" rel="noreferrer">WhatsApp</a><a href={`tel:${lead.phone}`}>Ara</a><button className="danger" type="button" disabled={leadsBusy} onClick={() => void removeLead(lead)}>Sil</button></div></td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+        )}
+      </section>}
 
       {view === "settings" && <section className="admin-main admin-settings-page">
         <header className="admin-topbar"><div><span>SİTE VE ENTEGRASYONLAR</span><h1>Ayarlar</h1></div><a className="admin-primary" href="/" target="_blank" rel="noreferrer">Siteyi kontrol et</a></header>

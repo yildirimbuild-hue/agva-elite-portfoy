@@ -290,7 +290,15 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
       }
     };
     recognition.onerror = (event) => {
-      if (event.error !== "aborted" && event.error !== "no-speech") setVoiceError("Mikrofon kullanılamadı. Tarayıcı izinlerini kontrol edin.");
+      if (event.error !== "aborted" && event.error !== "no-speech") {
+        const nedenler: Record<string, string> = {
+          "not-allowed": "Mikrofon izni engellenmiş. Adres çubuğundaki kilit simgesinden bu site için mikrofona izin verin ve sayfayı yenileyin.",
+          "service-not-allowed": "Tarayıcı, ses tanıma servisine izin vermiyor. Chrome veya Edge ile normal (uygulama içi olmayan) sekmede deneyin.",
+          "audio-capture": "Mikrofon bulunamadı veya başka bir uygulama tarafından kullanılıyor. Mikrofon bağlantısını kontrol edin.",
+          "network": "Ses tanıma servisine ağdan ulaşılamıyor. İnternet bağlantınızı veya ağ engellemelerini kontrol edin.",
+        };
+        setVoiceError(nedenler[event.error ?? ""] ?? `Mikrofon kullanılamadı (neden: ${event.error ?? "bilinmiyor"}). Tarayıcı izinlerini kontrol edin.`);
+      }
       setListening(false);
     };
     recognition.onend = () => {

@@ -65,3 +65,21 @@ export type ListingInput = Omit<Listing, "id" | "reference" | "slug" | "createdA
   reference?: string;
   slug?: string;
 };
+
+export type LeadKind = "bilgi" | "randevu";
+
+export type Lead = {
+  id: string;
+  kind: LeadKind;
+  name: string;
+  phone: string;
+  budget: string;
+  region: string;
+  propertyType: string;
+  appointmentTime: string;
+  summary: string;
+  listingReferences: string[];
+  createdAt: string;
+};
+
+export type LeadInput = Omit<Lead, "id" | "createdAt">;

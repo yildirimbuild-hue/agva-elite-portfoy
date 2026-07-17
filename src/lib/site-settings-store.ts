@@ -46,7 +46,7 @@ const defaults: Omit<StoredSiteSettings, "updatedAt"> = {
   whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "",
   phoneNumber: process.env.NEXT_PUBLIC_PHONE_NUMBER ?? "",
   voiceEnabled: Boolean(process.env.ELEVENLABS_API_KEY),
-  elevenLabsVoiceId: process.env.ELEVENLABS_VOICE_ID ?? "KAGDtM2gzDrjWlUp2KNe",
+  elevenLabsVoiceId: process.env.ELEVENLABS_VOICE_ID ?? "EXAVITQu4vr4xnSDxMaL",
   elevenLabsModel: process.env.ELEVENLABS_MODEL ?? "eleven_flash_v2_5",
   voiceStability: 0.45,
   voiceSimilarity: 0.82,
