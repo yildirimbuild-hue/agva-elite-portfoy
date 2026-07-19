@@ -1,0 +1,30 @@
+{
+  "name": "agva-elite-portfoy",
+  "version": "0.2.0-rc.2",
+  "private": true,
+  "scripts": {
+    "dev": "node node_modules/next/dist/bin/next dev -p 3200",
+    "seed": "node scripts/generate-seed.mjs",
+    "validate:data": "node scripts/validate-data.mjs",
+    "check:deployment": "node scripts/check-deployment.mjs",
+    "build": "npm run validate:data && npm run check:deployment && node node_modules/next/dist/bin/next build",
+    "start": "node node_modules/next/dist/bin/next start -p 3200",
+    "typecheck": "node node_modules/typescript/bin/tsc --noEmit",
+    "test:features": "node --test tests/feature-smoke.test.mjs"
+  },
+  "dependencies": {
+    "@vercel/blob": "^2.6.1",
+    "next": "16.2.9",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "^5"
+  },
+  "overrides": {
+    "postcss": "8.5.10"
+  }
+}

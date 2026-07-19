@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "workstreamId": "WS-000",
+  "state": "PLANNED",
+  "ownerAgentId": null,
+  "reviewerAgentId": null,
+  "baseVersion": "UNVERIFIED",
+  "baseSha256": "UNVERIFIED",
+  "allowedPaths": [],
+  "lockedPaths": [],
+  "blockers": [],
+  "updatedAt": null
+}

@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "protocolVersion": "YGİS-1.2",
+  "project": "İKİSU Emlak — Ağva Elite Portföy",
+  "workspaceMode": "PROJECT_CONTEXT_ONLY",
+  "canonicalBaseVersion": "0.1.0",
+  "integrationBranch": "NOT_APPLICABLE_UNTIL_SHARED_REPOSITORY",
+  "coordinationStatus": "REVIEW_READY",
+  "freezeNewWork": true,
+  "lastEventId": "EVT-WS003-RC2",
+  "updatedAt": "2026-07-18T18:30:00+03:00",
+  "parentSourceSha256": "722e0cf76b0c852888047b887cb9ffaa2e067070ffc1044fda5e79d58e117ca1",
+  "verifiedReleaseSha256": "97326260119885402106db79dcf10ea39ab359ef66dd51ae14879b22538c84af"
+}

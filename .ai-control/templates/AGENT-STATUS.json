@@ -1,0 +1,11 @@
+{
+  "agentId": "AI-ROLE-01",
+  "role": "DEVELOPER",
+  "status": "IDLE",
+  "activeWorkstreamId": null,
+  "baseVersion": "UNVERIFIED",
+  "baseSha256": "UNVERIFIED",
+  "heartbeatAt": null,
+  "lastProcessedMessageId": null,
+  "blockers": []
+}

@@ -1,0 +1,21 @@
+# dependencies
+/node_modules
+
+# next.js
+/.next
+/out
+
+# local
+.DS_Store
+*.log
+.env*
+!.env.example
+/data/site-settings.json
+/data/leads.json
+/data/interactions.json
+/data/appointment-state.json
+/data/audit-log.json
+/data/error-events.json
+
+# typescript
+*.tsbuildinfo

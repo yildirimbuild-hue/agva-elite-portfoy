@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "projectId": "ikisu-emlak-agva-elite-portfoy",
+  "projectName": "İKİSU Emlak — Ağva Elite Portföy",
+  "currentVersion": "0.2.0-rc.2",
+  "versionStatus": "REVIEW_CANDIDATE",
+  "releaseStatus": "REVIEW_READY",
+  "projectLevel": "S2",
+  "workspaceMode": "PROJECT_CONTEXT_ONLY",
+  "canonicalSource": {
+    "type": "zip",
+    "file": "agva-elite-portfoy-Paket-2-final (1).zip",
+    "sha256": "722e0cf76b0c852888047b887cb9ffaa2e067070ffc1044fda5e79d58e117ca1",
+    "verifiedAt": "2026-07-18"
+  },
+  "stack": {
+    "framework": "Next.js 16.2.9",
+    "ui": [
+      "React 19.2.4",
+      "TypeScript 5"
+    ],
+    "runtime": "Node.js",
+    "packageManager": "npm"
+  },
+  "dataStores": [
+    "Local JSON demo stores",
+    "Optional GitHub Contents API adapters",
+    "Optional Vercel Blob media storage"
+  ],
+  "externalServices": [
+    {
+      "name": "DeepSeek",
+      "status": "CONFIGURATION_REQUIRED_FOR_LIVE_TEST"
+    },
+    {
+      "name": "ElevenLabs",
+      "status": "CONFIGURATION_REQUIRED_FOR_LIVE_TEST"
+    },
+    {
+      "name": "GitHub Contents API",
+      "status": "OPTIONAL_UNVERIFIED"
+    },
+    {
+      "name": "Vercel Blob",
+      "status": "OPTIONAL_UNVERIFIED"
+    }
+  ],
+  "completedPackages": [
+    "Temel portföy ve admin sistemi",
+    "CRM hattı ve ilan/SEO yazarı",
+    "Paket 1 — Yapay zekâ destekli randevu sistemi",
+    "Paket 2 — Tam müşteri kartı",
+    "Paket 3 — Portföy–Müşteri Eşleştirme (review candidate)"
+  ],
+  "activeWorkstream": "WS-003",
+  "nextRecommendedPackage": "Bağımsız review sonrası Paket 4 — Yönetici Raporları",
+  "mustNotBreak": [
+    "Ana sayfa ve 24 portföy kaydı",
+    "22 yayın ilanının listelenmesi ve ilan detay sayfaları",
+    "İlan bağlamlı yapay zekâ danışmanı",
+    "Admin girişinin doğru şifreyi kabul edip yanlış şifreyi reddetmesi",
+    "İlan ekleme, düzenleme, yayın/taslak ve silme akışları",
+    "CRM aşamaları ve haftalık dönüşüm özeti",
+    "İlan ve SEO yazarı",
+    "Randevu müsaitlik motoru, geçici saat kilidi ve çift rezervasyon engeli",
+    "Randevu kaydının CRM müşterisi oluşturması",
+    "Tam Müşteri Kartı ve iletişim geçmişi",
+    "Kısmi müşteri güncellemesinin gönderilmeyen alanları silmemesi",
+    "Yerel JSON ve GitHub veri adaptörlerinin geriye uyumluluğu"
+  ],
+  "baseline": {
+    "npmCi": "PASS",
+    "typecheck": "PASS",
+    "featureTests": "PASS_20_OF_20",
+    "dataValidation": "PASS_24_UNIQUE_22_PUBLISHED",
+    "productionBuild": "PASS",
+    "httpSmoke": "PASS_ADMIN_MATCHING_BIDIRECTIONAL"
+  },
+  "openRisks": [
+    "Yerel JSON depoları çoklu eşzamanlı üretim yazımı için uygun değildir.",
+    "Canlı DeepSeek ve ElevenLabs çağrıları gerçek anahtar olmadan doğrulanmadı.",
+    "GitHub Contents ve Vercel Blob üretim kalıcılığı bu ortamda doğrulanmadı.",
+    "Tarayıcı tabanlı tam görsel E2E testi bu bootstrap turunda çalıştırılmadı.",
+    "ChatGPT Projesi ortak bağlamdır; ortak yazılabilir depo doğrulanmadığı için paralel kaynak yazımı kapalıdır.",
+    "0.2.0-rc.2 için ayrı reviewer APPROVED bekleniyor."
+  ],
+  "rollback": {
+    "file": "agva-elite-portfoy-v0.1.0-ygis-bootstrap(2).zip",
+    "sha256": "97326260119885402106db79dcf10ea39ab359ef66dd51ae14879b22538c84af"
+  },
+  "lastVerifiedAt": "2026-07-18",
+  "verifiedRelease": {
+    "file": "agva-elite-portfoy-v0.1.0-ygis-bootstrap(2).zip",
+    "sha256": "97326260119885402106db79dcf10ea39ab359ef66dd51ae14879b22538c84af",
+    "releasedAt": "2026-07-18"
+  },
+  "candidateArtifact": {
+    "version": "0.2.0-rc.2",
+    "status": "REVIEW_READY",
+    "packagingType": "REVIEW_CANDIDATE_SNAPSHOT",
+    "independentReview": "PENDING"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "rules": [
+    {
+      "pattern": "VERSION",
+      "ownerRole": "RELEASE"
+    },
+    {
+      "pattern": "PROJECT-STATE.json",
+      "ownerRole": "RELEASE"
+    },
+    {
+      "pattern": "CHANGELOG.md",
+      "ownerRole": "RELEASE"
+    },
+    {
+      "pattern": "HANDOFF.md",
+      "ownerRole": "RELEASE"
+    },
+    {
+      "pattern": "RELEASE-MANIFEST.json",
+      "ownerRole": "RELEASE"
+    },
+    {
+      "pattern": "src/lib/auth.ts",
+      "ownerRole": "SECURITY_OR_INTEGRATOR"
+    },
+    {
+      "pattern": "src/lib/types.ts",
+      "ownerRole": "INTEGRATOR"
+    },
+    {
+      "pattern": "**/package-lock.json",
+      "ownerRole": "INTEGRATOR"
+    },
+    {
+      "pattern": "data/**",
+      "ownerRole": "ASSIGNED_DATA_WORKSTREAM"
+    },
+    {
+      "pattern": "MIGRATIONS/**",
+      "ownerRole": "DATA_OR_INTEGRATOR"
+    }
+  ]
+}

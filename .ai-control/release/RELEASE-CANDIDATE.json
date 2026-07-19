@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "project": "İKİSU Emlak — Ağva Elite Portföy",
+  "version": "0.2.0-rc.2",
+  "status": "REVIEW_READY",
+  "artifactType": "REVIEW_CANDIDATE_SNAPSHOT",
+  "baseRelease": {
+    "version": "0.1.0",
+    "sha256": "97326260119885402106db79dcf10ea39ab359ef66dd51ae14879b22538c84af"
+  },
+  "tests": {
+    "npmCi": "PASS",
+    "typecheck": "PASS",
+    "featureTests": "PASS_20_OF_20",
+    "dataValidation": "PASS_24_UNIQUE_22_PUBLISHED",
+    "productionBuildStart": "PASS",
+    "httpSmoke": "PASS"
+  },
+  "independentReview": "PENDING",
+  "generatedAt": "2026-07-18T18:30:00+03:00"
+}

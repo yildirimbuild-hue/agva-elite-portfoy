@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "workstreamId": "WS-B0-BOOTSTRAP",
+  "baseSha256": "722e0cf76b0c852888047b887cb9ffaa2e067070ffc1044fda5e79d58e117ca1",
+  "changedFiles": [],
+  "addedFiles": [
+    "VERSION",
+    "PROJECT-STATE.json",
+    "PROJECT-IDENTITY.md",
+    "BASELINE-REPORT.md",
+    "CHANGELOG.md",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "HANDOFF.md",
+    "RELEASE-CHECKLIST.md",
+    ".ai-control/**"
+  ],
+  "deletedFiles": [],
+  "migrationFiles": [],
+  "tests": [
+    "npm ci PASS",
+    "npm run typecheck PASS",
+    "npm run test:features 13/13 PASS",
+    "npm run build PASS",
+    "HTTP smoke PASS"
+  ],
+  "openRisks": [
+    "Live external services not tested without credentials",
+    "Browser visual E2E not executed",
+    "PROJECT_CONTEXT_ONLY mode"
+  ]
+}

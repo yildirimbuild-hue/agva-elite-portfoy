@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "workstreams": [
+    {
+      "workstreamId": "WS-B0-BOOTSTRAP",
+      "title": "YGİS Proje Kontrol Merkezi Bootstrap",
+      "state": "RELEASED",
+      "ownerAgentId": "AI-BOOTSTRAP-01",
+      "reviewerAgentId": "AI-REVIEW-01",
+      "integratorAgentId": "AI-RELEASE-01",
+      "baseVersion": "0.1.0",
+      "baseSha256": "722e0cf76b0c852888047b887cb9ffaa2e067070ffc1044fda5e79d58e117ca1",
+      "allowedPaths": [
+        "project-control-files",
+        "\\.ai-control/**"
+      ],
+      "blockers": [],
+      "updatedAt": "2026-07-18T10:42:10.670005+00:00"
+    },
+    {
+      "workstreamId": "WS-003",
+      "title": "Paket 3 — Portföy–Müşteri Eşleştirme",
+      "state": "REVIEW_READY",
+      "ownerAgentId": "AI-DEV-01",
+      "reviewerAgentId": "AI-REVIEW-01",
+      "integratorAgentId": "AI-RELEASE-01",
+      "baseVersion": "0.1.0",
+      "baseSha256": "97326260119885402106db79dcf10ea39ab359ef66dd51ae14879b22538c84af",
+      "candidateVersion": "0.2.0-rc.2",
+      "allowedPaths": [
+        "src/lib/matching-engine.ts",
+        "src/lib/types.ts",
+        "src/app/api/admin/matches/**",
+        "src/components/CustomerCardModal.tsx",
+        "src/components/ListingMatchesModal.tsx",
+        "src/components/AdminPanel.tsx",
+        "src/app/globals.css",
+        "tests/**",
+        "project-control-files",
+        ".ai-control/**"
+      ],
+      "blockers": [
+        "INDEPENDENT_REVIEW_PENDING"
+      ],
+      "updatedAt": "2026-07-18T18:30:00+03:00"
+    }
+  ]
+}
