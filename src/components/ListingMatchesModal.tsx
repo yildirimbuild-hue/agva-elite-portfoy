@@ -37,9 +37,10 @@ export function ListingMatchesModal({ listing, onClose, onOpenCustomer }: Props)
         {data && <section className="match-list"><h3>Uygun müşteriler</h3>{data.matches.length === 0 ? <p>Aktif müşteri bulunmuyor.</p> : data.matches.map((item) => <article key={item.lead.id} data-status={item.status}>
           <header><div><strong>{item.lead.name || "İsimsiz müşteri"}</strong><small>{item.lead.customerRole} · {item.lead.stage} · {item.lead.temperature}</small></div><span>{statusLabel(item.status)}</span></header>
           <div className="match-score"><strong>{item.score === null ? "—" : `%${item.score}`}</strong><small>Veri kapsamı %{item.coveragePercent}</small></div>
-          {item.reasons.length > 0 && <p>{item.reasons.slice(0, 4).join(" · ")}</p>}
+          {item.reasons.length > 0 && <p>{item.reasons.join(" · ")}</p>}
           {item.warnings.length > 0 && <em>{item.warnings.join(" ")}</em>}
-          <footer><a href={`tel:${item.lead.phone}`}>Ara</a><button type="button" onClick={() => { onOpenCustomer(item.lead.id); onClose(); }}>Müşteri kartını aç</button></footer>
+          {item.criteria.some((criterion) => criterion.outcome === "blocked" || criterion.outcome === "unknown") && <ul className="match-criteria">{item.criteria.filter((criterion) => criterion.outcome === "blocked" || criterion.outcome === "unknown").map((criterion) => <li key={criterion.key}>{criterion.detail}</li>)}</ul>}
+          <footer><a href={`tel:${item.lead.phone}`}>Ara</a><button type="button" onClick={() => onOpenCustomer(item.lead.id)}>Müşteri kartını aç</button></footer>
         </article>)}</section>}
       </div>
       <footer className="customer-card-footer"><button type="button" onClick={onClose}>Kapat</button></footer>

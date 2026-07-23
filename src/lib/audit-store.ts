@@ -5,7 +5,7 @@ import path from "node:path";
 const filePath = path.join(process.cwd(), "data", "audit-log.json");
 const MAX_EVENTS = 1000;
 
-type AuditEvent = {
+export type AuditEvent = {
   id: string;
   actor: string;
   action: string;
@@ -21,6 +21,11 @@ type AuditEvent = {
 async function readEvents(): Promise<AuditEvent[]> {
   try { return JSON.parse(await readFile(filePath, "utf8")) as AuditEvent[]; }
   catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return []; throw error; }
+}
+
+export async function getAuditEvents(limit = 100) {
+  const safeLimit = Math.max(1, Math.min(limit, MAX_EVENTS));
+  return (await readEvents()).slice(-safeLimit).reverse();
 }
 
 export async function appendAuditEvent(input: Omit<AuditEvent, "id" | "createdAt" | "previousHash" | "hash">) {

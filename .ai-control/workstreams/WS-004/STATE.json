@@ -1,0 +1,23 @@
+{
+  "workstreamId": "WS-004",
+  "title": "İlan Detay Favorileri",
+  "state": "REVIEW_READY",
+  "ownerAgentId": "AI-DEV-02",
+  "reviewerAgentId": "AI-REVIEW-01",
+  "integratorAgentId": "AI-RELEASE-01",
+  "baseVersion": "0.2.0-rc.3+workspace-approved-2026-07-23",
+  "baseSha256": "7feb9dae51873fa1ab8f1ed875c6c1b9641be820c179bdb2be8ab7714972ef3f",
+  "allowedPaths": [
+    "src/components/ListingDetail.tsx",
+    "src/components/ListingDetail.module.css",
+    "src/lib/listing-favorites.ts",
+    "tests/listing-favorites.test.mjs",
+    "package.json",
+    "project-control-files",
+    ".ai-control/**"
+  ],
+  "blockers": [
+    "INDEPENDENT_REVIEW_PENDING"
+  ],
+  "updatedAt": "2026-07-23T18:22:31.7466450+03:00"
+}

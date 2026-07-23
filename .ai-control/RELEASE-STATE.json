@@ -1,11 +1,12 @@
 {
   "schemaVersion": 1,
   "authorized": true,
+  "requiredCommand": "PAKETLE",
   "authorizationCommand": "PAKETLE",
-  "authorizedAt": "2026-07-18T18:30:00+03:00",
+  "authorizedAt": "2026-07-19T15:46:05+03:00",
   "authorizedBy": "USER",
   "releaseScopeFrozen": true,
-  "candidateVersion": "0.2.0-rc.2",
+  "candidateVersion": "0.2.0-rc.3",
   "selectedWorkstreams": [
     "WS-003"
   ],
@@ -15,9 +16,11 @@
     "noOpenConflicts": true,
     "noActiveLocks": true,
     "testsPass": true,
+    "realBrowserUserFlowPass": true,
     "cleanWorkspace": true,
     "secretsClean": true,
+    "testDataClean": true,
     "rollbackDefined": true
   },
-  "packageStatus": "REVIEW_CANDIDATE_SNAPSHOT"
+  "packageStatus": "PACKAGED_REVIEW_CANDIDATE"
 }

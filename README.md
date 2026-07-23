@@ -222,6 +222,7 @@ CRM kartlarındaki **Müşteri kartı** düğmesi, her müşteri için tek bir M
 
 - **Özet:** ad, telefon, e-posta, müşteri tipi, sıcaklık, atanan danışman, CRM aşaması, son iletişim, sonraki işlem ve önemli notlar
 - **İhtiyaçlar:** minimum/maksimum bütçe, para birimi, bölgeler, gayrimenkul türleri, oda, alan, finansman, satın alma zamanı, vazgeçilmez/tercih edilen/istenmeyen özellikler
+- **Eşleşmeler:** uygun portföyler, puan, veri kapsamı, bütün nedenler, engel ayrıntıları ve ilgilenilenlere ekleme
 - **İletişim:** arama, WhatsApp, not, randevu ve e-posta görüşme kayıtları; sonuç ve sonraki işlem tarihi
 - **Randevular:** müşteriye bağlı tüm randevular ve durumları
 - **İlanlar:** müşterinin ilgilendiği ilanları ekleme, kaldırma ve açma
@@ -268,3 +269,7 @@ Release ZIP'i yalnız kullanıcının güncel mesajında bağımsız `PAKETLE` k
 
 Admin panelinde müşteri ve portföyler çift yönlü, açıklanabilir ve deterministik kurallarla eşleştirilir. Eksik veri olumsuz sayılmaz; veri kapsamı ayrıca gösterilir. Sonuçlar yalnız admin oturumunda hesaplanır.
 
+
+## Görünür özellik doğrulaması
+
+Yeni veya değişen kullanıcı arayüzü özelliklerinde `UI-REACHABILITY-AND-USER-FLOW-GATE.md` zorunludur. Kod, API veya build başarısı tek başına özellik kabulü değildir.

@@ -1,6 +1,6 @@
 {
   "name": "agva-elite-portfoy",
-  "version": "0.2.0-rc.2",
+  "version": "0.2.0-rc.3",
   "private": true,
   "scripts": {
     "dev": "node node_modules/next/dist/bin/next dev -p 3200",
@@ -10,7 +10,7 @@
     "build": "npm run validate:data && npm run check:deployment && node node_modules/next/dist/bin/next build",
     "start": "node node_modules/next/dist/bin/next start -p 3200",
     "typecheck": "node node_modules/typescript/bin/tsc --noEmit",
-    "test:features": "node --test tests/feature-smoke.test.mjs"
+    "test:features": "node --test tests/feature-smoke.test.mjs tests/listing-favorites.test.mjs"
   },
   "dependencies": {
     "@vercel/blob": "^2.6.1",

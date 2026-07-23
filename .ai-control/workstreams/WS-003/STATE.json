@@ -1,1 +1,15 @@
-{"schemaVersion":1,"workstreamId":"WS-003","state":"REVIEW_READY","ownerAgentId":"AI-DEV-01","reviewerAgentId":"AI-REVIEW-01","baseVersion":"0.1.0","baseSha256":"97326260119885402106db79dcf10ea39ab359ef66dd51ae14879b22538c84af","candidateVersion":"0.2.0-rc.2","blockers":["INDEPENDENT_REVIEW_PENDING"],"updatedAt":"2026-07-18T18:30:00+03:00"}
+{
+  "schemaVersion": 1,
+  "workstreamId": "WS-003",
+  "state": "REVIEW_READY",
+  "ownerAgentId": "AI-DEV-01",
+  "reviewerAgentId": "AI-REVIEW-01",
+  "baseVersion": "0.1.0",
+  "baseSha256": "97326260119885402106db79dcf10ea39ab359ef66dd51ae14879b22538c84af",
+  "candidateVersion": "0.2.0-rc.3",
+  "candidateParentSha256": "288003c0d34c94864791c151f644db06e6972f35966eea1c4b7d7fd18f1e9391",
+  "blockers": [
+    "INDEPENDENT_REVIEW_PENDING"
+  ],
+  "updatedAt": "2026-07-19T15:46:05+03:00"
+}

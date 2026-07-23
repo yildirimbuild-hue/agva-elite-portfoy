@@ -1,4 +1,8 @@
-# Değişiklik Raporu
+# WS-003 Değişiklik Raporu — 0.2.0-rc.3
 
-- Eşleştirme motoru, admin API, müşteri eşleşme sekmesi ve portföy müşteri modalı eklendi.
-- Reviewer bulguları: rol yönü, unknown özellik, olumsuz cümle, hard-only görünürlük, eksik konum ve villa alanı düzeltildi.
+- Müşteri kartına görünür Eşleşmeler sekmesi eklendi.
+- Eşleşme fetch effect yarış koşulu düzeltildi.
+- Bütün uyum nedenleri görünür hâle getirildi.
+- Bütçe, rol ve bilinmeyen özellik kriter ayrıntıları ekranda gösterildi.
+- Portföy eşleşmesinden müşteri kartına modal geçişi temizlendi.
+- UI erişilebilirlik politikası ve regresyon testleri eklendi.

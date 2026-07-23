@@ -3,8 +3,8 @@
   "authorized": true,
   "requiredCommand": "PAKETLE",
   "authorizationCommand": "PAKETLE",
-  "authorizedAt": "2026-07-18T18:30:00+03:00",
+  "authorizedAt": "2026-07-19T15:46:05+03:00",
   "authorizedBy": "USER",
-  "scope": "0.2.0-rc.2 review-candidate snapshot",
-  "note": "Kullanıcı GitHub yerine son ZIP tabanlı çalışma adayını paketlemeyi istedi."
+  "scope": "0.2.0-rc.3 review candidate ZIP",
+  "note": "Kullanıcı güncel mesajında bağımsız PAKETLE komutu verdi. Bağımsız reviewer onayı beklediği için artefakt doğrulanmış release değil, review candidate olarak paketlenir."
 }

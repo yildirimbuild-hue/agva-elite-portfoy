@@ -74,3 +74,25 @@
 
 Müşteri kartına otomatik portföy önerileri, portföy tablosuna uygun müşteri görünümü, admin-only eşleştirme API'si ve açıklanabilir deterministik kural motoru eklendi. Fiziksel veri migration'ı yapılmadı.
 
+
+## Paket 3 saha düzeltme turu — 0.2.0-rc.3
+
+### Düzeltilenler
+
+- `CustomerCardModal.tsx` sekme listesine `Eşleşmeler` görünür giriş noktası eklendi.
+- Eşleşme fetch effect'inde `matchesLoading` bağımlılığının oluşturduğu iptal/yüklemede kalma yarışı kaldırıldı.
+- Müşteri ve portföy eşleşme kartlarında bütün gerekçeler gösterildi.
+- `blocked` ve `unknown` kriter ayrıntıları kullanıcıya görünür hâle getirildi.
+- Portföy eşleşmesinden müşteri kartına modal geçişi tek sahipli hâle getirildi.
+- UI erişilebilirlik ve gerçek kullanıcı yolculuğu politikası uygulama köküne eklendi.
+
+### Test kapsamı
+
+- Görünür Eşleşmeler sekmesi
+- İyi eşleşme ve bütün nedenler
+- İlgilenilen ilan kalıcılığı
+- Bütçe sert elemesi
+- Satıcı rolü sert elemesi
+- Bilinmeyen istenmeyen özellikte `Bilgi gerekli`
+- Yalnız kesin kriterli puansız uygun sonuç
+- Portföyden müşteri kartına temiz modal geçişi

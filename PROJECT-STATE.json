@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "projectId": "ikisu-emlak-agva-elite-portfoy",
   "projectName": "İKİSU Emlak — Ağva Elite Portföy",
-  "currentVersion": "0.2.0-rc.2",
+  "currentVersion": "0.2.0-rc.3",
   "versionStatus": "REVIEW_CANDIDATE",
-  "releaseStatus": "REVIEW_READY",
+  "releaseStatus": "REVIEW_READY_PACKAGED",
   "projectLevel": "S2",
   "workspaceMode": "PROJECT_CONTEXT_ONLY",
   "canonicalSource": {
@@ -71,33 +71,46 @@
   "baseline": {
     "npmCi": "PASS",
     "typecheck": "PASS",
-    "featureTests": "PASS_20_OF_20",
+    "featureTests": "PASS_23_OF_23",
     "dataValidation": "PASS_24_UNIQUE_22_PUBLISHED",
     "productionBuild": "PASS",
-    "httpSmoke": "PASS_ADMIN_MATCHING_BIDIRECTIONAL"
+    "productionStart": "PASS",
+    "httpSmoke": "PASS_ADMIN_MATCHING_BIDIRECTIONAL",
+    "realBrowserUserFlow": "PASS_9_OF_9",
+    "cleanWorkspace": "PASS",
+    "secretsScan": "PASS_NO_REAL_KEYS_OR_ENV_LOCAL"
   },
   "openRisks": [
     "Yerel JSON depoları çoklu eşzamanlı üretim yazımı için uygun değildir.",
     "Canlı DeepSeek ve ElevenLabs çağrıları gerçek anahtar olmadan doğrulanmadı.",
     "GitHub Contents ve Vercel Blob üretim kalıcılığı bu ortamda doğrulanmadı.",
-    "Tarayıcı tabanlı tam görsel E2E testi bu bootstrap turunda çalıştırılmadı.",
     "ChatGPT Projesi ortak bağlamdır; ortak yazılabilir depo doğrulanmadığı için paralel kaynak yazımı kapalıdır.",
-    "0.2.0-rc.2 için ayrı reviewer APPROVED bekleniyor."
+    "0.2.0-rc.3 review candidate ZIP üretildi; ayrı reviewer APPROVED olmadan doğrulanmış release sayılmaz."
   ],
   "rollback": {
     "file": "agva-elite-portfoy-v0.1.0-ygis-bootstrap(2).zip",
     "sha256": "97326260119885402106db79dcf10ea39ab359ef66dd51ae14879b22538c84af"
   },
-  "lastVerifiedAt": "2026-07-18",
+  "lastVerifiedAt": "2026-07-19",
   "verifiedRelease": {
     "file": "agva-elite-portfoy-v0.1.0-ygis-bootstrap(2).zip",
     "sha256": "97326260119885402106db79dcf10ea39ab359ef66dd51ae14879b22538c84af",
     "releasedAt": "2026-07-18"
   },
   "candidateArtifact": {
-    "version": "0.2.0-rc.2",
-    "status": "REVIEW_READY",
-    "packagingType": "REVIEW_CANDIDATE_SNAPSHOT",
-    "independentReview": "PENDING"
+    "version": "0.2.0-rc.3",
+    "status": "PACKAGED_REVIEW_CANDIDATE",
+    "packagingType": "REVIEW_CANDIDATE_ZIP",
+    "independentReview": "PENDING",
+    "parentCandidate": {
+      "file": "agva-elite-portfoy-v0.2.0-rc.2-review-candidate(1).zip",
+      "sha256": "288003c0d34c94864791c151f644db06e6972f35966eea1c4b7d7fd18f1e9391"
+    },
+    "uiReachability": "PASS",
+    "realBrowserUserFlow": "PASS_9_OF_9",
+    "file": "agva-elite-portfoy-v0.2.0-rc.3-review-candidate.zip",
+    "packageAuthorized": true,
+    "packagedAt": "2026-07-19T15:46:05+03:00",
+    "verifiedRelease": false
   }
 }

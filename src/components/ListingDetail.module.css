@@ -1,0 +1,50 @@
+.favoriDugmesi.favoriDugmesi {
+  grid-column: 1 / -1;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--forest);
+  border: 1px solid #315f49;
+  background: #fff;
+  transition: color .18s ease, background .18s ease, border-color .18s ease;
+}
+
+.favoriDugmesi.favoriDugmesi:hover {
+  color: #fff;
+  background: #46715d;
+}
+
+.favoriDugmesi.favoriDugmesi:focus-visible {
+  outline: 3px solid rgba(128, 100, 56, .4);
+  outline-offset: 3px;
+}
+
+.favoriDugmesi.favoriDugmesi:disabled {
+  color: #78817d;
+  border-color: #cfd3cf;
+  background: #f3f3ef;
+  cursor: wait;
+}
+
+.favoride.favoride {
+  color: #fff;
+  border-color: #315f49;
+  background: #315f49;
+}
+
+.favoriIkonu {
+  font-size: 19px;
+  line-height: 1;
+}
+
+.favoriBildirimi {
+  grid-column: 1 / -1;
+  min-height: 15px;
+  margin: -2px 0 0;
+  color: #66716b;
+  font-size: 8px;
+  line-height: 1.5;
+  text-align: center;
+}

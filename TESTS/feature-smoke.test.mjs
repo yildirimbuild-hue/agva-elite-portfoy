@@ -210,6 +210,75 @@ test("iletişim kaydı kişisel veri taşmasını sınırlayan temiz bir sözle�
   assert.equal(input.createdBy, "Adnan");
 });
 
+test("mevcut Yönetici AI özelliği admin panelinden doğrudan ve senkronize biçimde erişilebilir", async () => {
+  const panelSource = await readFile("src/components/AdminPanel.tsx", "utf8");
+  const conciergeSource = await readFile("src/components/AIConcierge.tsx", "utf8");
+
+  assert.match(panelSource, /import \{ AIConcierge \} from "@\/components\/AIConcierge"/);
+  assert.match(panelSource, /view === "assistant"/);
+  assert.match(panelSource, /Yönetici AI/);
+  assert.match(panelSource, /<AIConcierge adminAccess initiallyOpen onListingsChanged=/);
+  assert.match(conciergeSource, /adminAccess \? "ready" : "public"/);
+  assert.match(conciergeSource, /onListingsChanged\?\.\(\)/);
+});
+
+test("arka plandaki sistem sağlığı admin panelinde görünür ve yenilenebilir", async () => {
+  const panelSource = await readFile("src/components/AdminPanel.tsx", "utf8");
+
+  assert.match(panelSource, /view === "operations"/);
+  assert.match(panelSource, /Sistem durumu/);
+  assert.match(panelSource, /fetch\("\/api\/health", \{ cache: "no-store" \}\)/);
+  assert.match(panelSource, /Sistem verilerini yenile/);
+});
+
+test("hash zincirli denetim olayları yalnız admin API üzerinden görünür", async () => {
+  const panelSource = await readFile("src/components/AdminPanel.tsx", "utf8");
+  const auditSource = await readFile("src/lib/audit-store.ts", "utf8");
+  const routeSource = await readFile("src/app/api/admin/operations/route.ts", "utf8");
+
+  assert.match(auditSource, /export async function getAuditEvents/);
+  assert.match(routeSource, /isAdminAuthenticated/);
+  assert.match(routeSource, /getAuditEvents/);
+  assert.match(panelSource, /\/api\/admin\/operations/);
+  assert.match(panelSource, /Denetim kayıtları/);
+});
+
+test("maskelenmiş hata olayları admin panelinde boş ve dolu durumlarıyla görünür", async () => {
+  const panelSource = await readFile("src/components/AdminPanel.tsx", "utf8");
+  const errorSource = await readFile("src/lib/error-store.ts", "utf8");
+  const routeSource = await readFile("src/app/api/admin/operations/route.ts", "utf8");
+
+  assert.match(errorSource, /export async function getErrorEvents/);
+  assert.match(routeSource, /getErrorEvents/);
+  assert.match(panelSource, /Hata olayları/);
+  assert.match(panelSource, /Kayıtlı hata olayı yok/);
+  assert.match(panelSource, /occurrenceCount/);
+});
+
+
+
+test("müşteri kartı eşleşme ekranı görünür sekmeyle erişilebilir", async () => {
+  const source = await readFile("src/components/CustomerCardModal.tsx", "utf8");
+  assert.match(source, /\["matches", "Eşleşmeler"\]/);
+  assert.match(source, /onClick=\{\(\) => setTab\(key\)\}/);
+  assert.match(source, /tab === "matches"/);
+  assert.doesNotMatch(source, /tab !== "matches" \|\| matchData \|\| matchesLoading/);
+  assert.doesNotMatch(source, /\[lead\.id, matchData, matchesLoading, tab\]/);
+  assert.match(source, /Otomatik portföy eşleşmeleri/);
+  assert.doesNotMatch(source, /reasons\.slice\(0, 4\)/);
+  assert.match(source, /criterion\.outcome === "blocked" \|\| criterion\.outcome === "unknown"/);
+});
+
+test("portföy eşleşmelerinden müşteri kartına geçiş tek sahipli ve görünürdür", async () => {
+  const panelSource = await readFile("src/components/AdminPanel.tsx", "utf8");
+  const modalSource = await readFile("src/components/ListingMatchesModal.tsx", "utf8");
+  assert.match(panelSource, /onOpenCustomer=\{\(leadId\) => \{ setMatchingListing\(null\); setSelectedLeadId\(leadId\); \}\}/);
+  assert.match(modalSource, /onClick=\{\(\) => onOpenCustomer\(item\.lead\.id\)\}/);
+  assert.match(modalSource, /Müşteri kartını aç/);
+  assert.doesNotMatch(modalSource, /reasons\.slice\(0, 4\)/);
+  assert.match(modalSource, /criterion\.outcome === "blocked" \|\| criterion\.outcome === "unknown"/);
+});
+
 const matchingModule = await compileAndImport("src/lib/matching-engine.ts");
 
 function matchingLead(overrides = {}) {
@@ -242,6 +311,13 @@ test("satıcı, ev sahibi ve belirsiz roller talep eşleşmesine alınmaz", () =
     assert.equal(result.status, "ineligible");
     assert.equal(result.score, null);
   }
+});
+
+test("bütçe dışındaki ilan uygun sayılmaz ve açıklayıcı engel üretir", () => {
+  const result = matchingModule.matchCustomerToListing(matchingLead({ maxBudget: 10000000 }), matchingListing({ price: 18900000 }));
+  assert.equal(result.status, "ineligible");
+  assert.equal(result.score, null);
+  assert.match(result.criteria.find((item) => item.key === "budget").detail, /bütçe aralığı dışında/i);
 });
 
 test("istenmeyen özellik hakkında bilgi yoksa kesin uygunluk verilmez", () => {

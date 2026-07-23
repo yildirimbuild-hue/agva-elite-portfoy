@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "workstreamId": "WS-004",
+  "baseVersion": "0.2.0-rc.3+workspace-approved-2026-07-23",
+  "baseSha256": "7feb9dae51873fa1ab8f1ed875c6c1b9641be820c179bdb2be8ab7714972ef3f",
+  "generatedAt": "2026-07-23T18:22:31.7466450+03:00",
+  "files": [
+    {
+      "path": "src/components/ListingDetail.tsx",
+      "change": "MODIFIED",
+      "beforeSha256": "aef6c025242da9b6c379bccdf83dcdc23ed698038be506202b0aa192d91fdab0",
+      "afterSha256": "3b654c2ae1253c8829f70d23ac2e55354e1dd440d0f313061ec33fcd666257a2"
+    },
+    {
+      "path": "src/components/ListingDetail.module.css",
+      "change": "ADDED",
+      "beforeSha256": null,
+      "afterSha256": "beb159592ca95411d0d46dc95f08002454c098f01f7d707eb0d6be4fdd9bcf1d"
+    },
+    {
+      "path": "src/lib/listing-favorites.ts",
+      "change": "ADDED",
+      "beforeSha256": null,
+      "afterSha256": "7f4314ed724ac920d74af2f33c6c84c2ea711ce64088d3429970881a1c2f708e"
+    },
+    {
+      "path": "tests/listing-favorites.test.mjs",
+      "change": "ADDED",
+      "beforeSha256": null,
+      "afterSha256": "5741162911e2ec639be2febedd60e953e8ff8b22d2cce56a8dd694629d348ddd"
+    },
+    {
+      "path": "package.json",
+      "change": "MODIFIED",
+      "beforeSha256": "a1f37f4867026a693468adf7460a73db9596d9551982313756e5f38840a10250",
+      "afterSha256": "f8c5f7b5af84f7007c9e608d3a51d562f0a37a51f417f83ddf5eb0bbae224780"
+    }
+  ],
+  "notes": [
+    "Git metadatası boş olduğu için klasik git diff yerine kullanıcı onaylı çalışma alanı bileşik karması ve dosya kilidi başlangıç karmaları kullanıldı.",
+    "Görev öncesinde var olan 10 paket-manifest sapmasına dokunulmadı.",
+    "data/ altındaki JSON şemaları, package-lock.json ve bağımlılıklar değiştirilmedi."
+  ]
+}

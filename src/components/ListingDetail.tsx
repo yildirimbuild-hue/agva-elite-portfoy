@@ -1,8 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AIConcierge } from "@/components/AIConcierge";
 import { AppointmentScheduler } from "@/components/AppointmentScheduler";
+import styles from "@/components/ListingDetail.module.css";
+import {
+  FAVORI_ILANLAR_DEPOLAMA_ANAHTARI,
+  favoriIlanDurumunuDepodaDegistir,
+  favoriIlanKimlikleriniCoz,
+} from "@/lib/listing-favorites";
 import type { CompanyProfile, Listing } from "@/lib/types";
 
 const formatMoney = (amount: number, currency: Listing["currency"]) => new Intl.NumberFormat("tr-TR", {
@@ -14,6 +20,9 @@ const formatMoney = (amount: number, currency: Listing["currency"]) => new Intl.
 export function ListingDetail({ listing, company }: { listing: Listing; company: CompanyProfile }) {
   const [selectedImage, setSelectedImage] = useState(0);
   const [appointmentOpen, setAppointmentOpen] = useState(false);
+  const [favoride, setFavoride] = useState(false);
+  const [favoriHazir, setFavoriHazir] = useState(false);
+  const [favoriBildirimi, setFavoriBildirimi] = useState("");
   const imageCount = listing.images.length;
   const moveImage = (direction: number) => setSelectedImage((current) => (current + direction + imageCount) % imageCount);
   const whatsappDigits = company.whatsappNumber.replace(/\D/g, "");
@@ -24,6 +33,44 @@ export function ListingDetail({ listing, company }: { listing: Listing; company:
   const discount = listing.oldPrice > listing.price
     ? Math.round(((listing.oldPrice - listing.price) / listing.oldPrice) * 100)
     : 0;
+
+  useEffect(() => {
+    setFavoriHazir(false);
+    setFavoriBildirimi("");
+
+    try {
+      const kimlikler = favoriIlanKimlikleriniCoz(
+        window.localStorage.getItem(FAVORI_ILANLAR_DEPOLAMA_ANAHTARI),
+      );
+      setFavoride(kimlikler.includes(listing.id));
+    } catch {
+      setFavoriBildirimi("Favoriler bu tarayıcıda kullanılamıyor.");
+    } finally {
+      setFavoriHazir(true);
+    }
+
+    const depolamaDegisti = (event: StorageEvent) => {
+      if (event.key !== FAVORI_ILANLAR_DEPOLAMA_ANAHTARI && event.key !== null) return;
+      const yeniDeger = event.key === null ? null : event.newValue;
+      setFavoride(favoriIlanKimlikleriniCoz(yeniDeger).includes(listing.id));
+      setFavoriBildirimi("Favori durumu başka bir sekmede güncellendi.");
+    };
+
+    window.addEventListener("storage", depolamaDegisti);
+    return () => window.removeEventListener("storage", depolamaDegisti);
+  }, [listing.id]);
+
+  const favoriDurumunuDegistir = () => {
+    try {
+      const sonrakiDurum = favoriIlanDurumunuDepodaDegistir(window.localStorage, listing.id);
+      setFavoride(sonrakiDurum);
+      setFavoriBildirimi(
+        sonrakiDurum ? "İlan favorilerinize eklendi." : "İlan favorilerinizden çıkarıldı.",
+      );
+    } catch {
+      setFavoriBildirimi("Favori bu tarayıcıya kaydedilemedi. Tarayıcı depolama iznini kontrol edin.");
+    }
+  };
 
   return (
     <>
@@ -70,6 +117,18 @@ export function ListingDetail({ listing, company }: { listing: Listing; company:
               {whatsappDigits ? <a className="whatsapp-action" href={whatsappHref} target="_blank" rel="noreferrer">WhatsApp’tan bilgi al</a> : <button className="whatsapp-action" type="button" onClick={contactMissing}>WhatsApp’tan bilgi al</button>}
               {phoneNumber ? <a className="call-action" href={`tel:${phoneNumber}`}>Danışmanı ara</a> : <button className="call-action" type="button" onClick={contactMissing}>Danışmanı ara</button>}
               <button className="appointment-action" type="button" onClick={() => setAppointmentOpen(true)}>Takvimden randevu al</button>
+              <button
+                className={`${styles.favoriDugmesi} ${favoride ? styles.favoride : ""}`}
+                type="button"
+                onClick={favoriDurumunuDegistir}
+                aria-label={favoride ? "Favorilerden çıkar" : "Favorilere ekle"}
+                aria-pressed={favoride}
+                disabled={!favoriHazir}
+              >
+                <span className={styles.favoriIkonu} aria-hidden="true">{favoride ? "♥" : "♡"}</span>
+                <span>{favoriHazir ? (favoride ? "Favorilerden çıkar" : "Favorilere ekle") : "Favoriler yükleniyor"}</span>
+              </button>
+              <p className={styles.favoriBildirimi} aria-live="polite">{favoriBildirimi}</p>
             </div>
             {listing.isDemo && <div className="modal-demo-warning">Bu kayıt sistem gösterimi için oluşturulmuş örnek ilandır.</div>}
           </div>

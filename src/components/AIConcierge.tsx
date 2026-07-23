@@ -27,6 +27,12 @@ type SpeechRecognitionLike = {
   abort: () => void;
 };
 type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
+type AIConciergeProps = {
+  listing?: ListingContext;
+  adminAccess?: boolean;
+  initiallyOpen?: boolean;
+  onListingsChanged?: () => void;
+};
 
 const wizardSteps: WizardStep[] = ["title", "price", "images", "purpose", "propertyType", "location", "rooms", "areas", "description", "features", "oldPrice", "labels", "review"];
 
@@ -117,14 +123,14 @@ function toAdminDraft(source: Listing): AdminDraft {
   };
 }
 
-export function AIConcierge({ listing }: { listing?: ListingContext }) {
-  const [open, setOpen] = useState(false);
+export function AIConcierge({ listing, adminAccess = false, initiallyOpen = false, onListingsChanged }: AIConciergeProps) {
+  const [open, setOpen] = useState(initiallyOpen);
   const [appointmentOpen, setAppointmentOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
-  const [adminMode, setAdminMode] = useState<AdminMode>("public");
+  const [adminMode, setAdminMode] = useState<AdminMode>(adminAccess ? "ready" : "public");
   const [adminDraft, setAdminDraft] = useState<AdminDraft | null>(null);
   const [wizardStep, setWizardStep] = useState<WizardStep | null>(null);
   const [editingTarget, setEditingTarget] = useState<AdminTarget | null>(null);
@@ -146,14 +152,16 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
   const audioDoneRef = useRef<((played: boolean) => void) | null>(null);
   const voiceModeRef = useRef(false);
 
-  const contextualSuggestions = listing ? [
+  const contextualSuggestions = adminAccess ? [] : listing ? [
     "Bu ilanın öne çıkan özellikleri neler?",
     "Fiyat avantajını açıklar mısın?",
     "Bu ilana benzer seçenekler göster",
     "Bu ilan için randevu almak istiyorum",
   ] : suggestions;
 
-  const greeting = listing
+  const greeting = adminAccess
+    ? "Yönetici AI hazır. Yeni ilan ekleyebilir veya IKS referansını yazarak mevcut bir ilanı düzenleyebilir, yayından kaldırabilir ya da silme onayı hazırlayabilirsiniz."
+    : listing
     ? `${listing.reference} numaralı “${listing.title}” ilanını inceliyorsunuz. Fiyatı, özellikleri veya benzer seçenekler hakkında yardımcı olmamı ister misiniz?`
     : "Merhaba. Bütçenizi, aradığınız bölgeyi veya emlak tipini yazın; güncel portföyden uygun seçenekleri bulayım.";
 
@@ -719,6 +727,7 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
         return;
       }
       setPendingDelete(null);
+      onListingsChanged?.();
       setMessages((current) => [...current, { role: "assistant", content: `${target.reference} numaralı “${target.title}” ilanı kalıcı olarak silindi.` }]);
       if (listing?.reference === target.reference) {
         setRedirecting(true);
@@ -759,6 +768,7 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
       setAdminDraft(null);
       setWizardStep(null);
       setEditingTarget(null);
+      onListingsChanged?.();
       setMessages((current) => [...current, {
         role: "assistant",
         content: target
@@ -868,6 +878,10 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
     }
     if (adminActive && ["cikis", "admin cikis", "yonetici cikis", "oturumu kapat"].includes(command)) {
       setInput("");
+      if (adminAccess) {
+        handlePanel(false);
+        return;
+      }
       await leaveAdminMode();
       return;
     }
@@ -962,7 +976,7 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
     <div className={`ai-concierge ${open ? "open" : ""}`}>
       {listing && <AppointmentScheduler listing={listing} open={appointmentOpen} source="ai-chat" onClose={() => setAppointmentOpen(false)} onBooked={handleAppointmentBooked} />}
       {open && (
-        <section className="ai-panel" aria-label="Yapay zekâ portföy danışmanı">
+        <section className="ai-panel" aria-label={adminActive ? "Yönetici AI portföy asistanı" : "Yapay zekâ portföy danışmanı"}>
           <header>
             <div className="ai-avatar">{adminMode === "public" ? "AI" : "YK"}</div>
             <div><strong>{adminMode === "public" ? "Portföy danışmanı" : "Yönetici asistanı"}</strong><span>{adminMode === "awaiting_password" ? "Güvenli kimlik doğrulama" : adminActive ? "Güvenli yönetici modu" : listing ? `${listing.reference} · Bu ilana hâkim` : "DeepSeek · İKİSU portföyüne bağlı"}</span></div>
@@ -1013,7 +1027,7 @@ export function AIConcierge({ listing }: { listing?: ListingContext }) {
             <div ref={messagesEndRef} />
           </div>
           {messages.length === 0 && <div className="ai-suggestions">{contextualSuggestions.map((item) => <button type="button" key={item} onClick={() => void ask(item)}>{item}</button>)}</div>}
-          {adminMode === "ready" && <div className="ai-suggestions ai-admin-actions"><button type="button" onClick={beginListingDraft}>+ Yeni ilan ekle</button>{listing && <button type="button" onClick={() => void beginEditingListing("bu ilanı düzenle")}>Bu ilanı düzenle</button>}{listing && <button className="danger" type="button" onClick={() => void requestListingDelete("bu ilanı sil")}>Bu ilanı sil</button>}<button type="button" onClick={() => void leaveAdminMode()}>Oturumu kapat</button></div>}
+          {adminMode === "ready" && <div className="ai-suggestions ai-admin-actions"><button type="button" onClick={beginListingDraft}>+ Yeni ilan ekle</button>{listing && <button type="button" onClick={() => void beginEditingListing("bu ilanı düzenle")}>Bu ilanı düzenle</button>}{listing && <button className="danger" type="button" onClick={() => void requestListingDelete("bu ilanı sil")}>Bu ilanı sil</button>}{!adminAccess && <button type="button" onClick={() => void leaveAdminMode()}>Oturumu kapat</button>}</div>}
           {adminMode === "drafting" && !editingTarget && wizardStep && wizardStep !== "review" && adminDraft && <div className="ai-wizard-card">
             <div className="ai-wizard-progress"><span>SİHİRBAZ</span><strong>{wizardSteps.indexOf(wizardStep) + 1} / {wizardSteps.length - 1}</strong></div>
             <div className="ai-wizard-track"><span style={{ width: `${((wizardSteps.indexOf(wizardStep) + 1) / (wizardSteps.length - 1)) * 100}%` }} /></div>

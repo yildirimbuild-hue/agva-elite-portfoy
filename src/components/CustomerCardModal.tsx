@@ -61,7 +61,7 @@ export function CustomerCardModal({ lead, listings, appointments, onClose, onUpd
 
 
   useEffect(() => {
-    if (tab !== "matches" || matchData || matchesLoading) return;
+    if (tab !== "matches" || matchData) return;
     let active = true;
     setMatchesLoading(true);
     void fetch(`/api/admin/matches?leadId=${encodeURIComponent(lead.id)}`, { cache: "no-store" })
@@ -74,7 +74,7 @@ export function CustomerCardModal({ lead, listings, appointments, onClose, onUpd
       .catch(() => { if (active) setMessage("Eşleşmeler yüklenemedi."); })
       .finally(() => { if (active) setMatchesLoading(false); });
     return () => { active = false; };
-  }, [lead.id, matchData, matchesLoading, tab]);
+  }, [lead.id, matchData, tab]);
 
   const completeness = customerProfileCompleteness(draft);
   const customerAppointments = useMemo(() => appointments.filter((item) => item.leadId === lead.id).sort((a, b) => b.startAt.localeCompare(a.startAt)), [appointments, lead.id]);
@@ -182,7 +182,7 @@ export function CustomerCardModal({ lead, listings, appointments, onClose, onUpd
       </header>
       <nav className="customer-card-tabs">
         {([[
-          "summary", "Özet"], ["needs", "İhtiyaçlar"], ["interactions", `İletişim (${interactions.length})`],
+          "summary", "Özet"], ["needs", "İhtiyaçlar"], ["matches", "Eşleşmeler"], ["interactions", `İletişim (${interactions.length})`],
           ["appointments", `Randevular (${customerAppointments.length})`], ["listings", `İlanlar (${draft.listingReferences.length})`], ["history", "CRM geçmişi"],
         ] as [Tab, string][]).map(([key, label]) => <button key={key} className={tab === key ? "active" : ""} type="button" onClick={() => setTab(key)}>{label}</button>)}
       </nav>
@@ -224,8 +224,9 @@ export function CustomerCardModal({ lead, listings, appointments, onClose, onUpd
         {tab === "matches" && <section className="match-list"><h3>Otomatik portföy eşleşmeleri</h3>{matchesLoading ? <p>Eşleşmeler hesaplanıyor...</p> : !matchData ? <p>Eşleşme verisi yüklenemedi.</p> : matchData.matches.length === 0 ? <p>Yayındaki portföy bulunmuyor.</p> : matchData.matches.map((item) => <article key={item.listing.reference} data-status={item.status}>
           <header><div><strong>{item.listing.title}</strong><small>{item.listing.reference} · {item.listing.location} · {item.listing.purpose}</small></div><span>{item.status === "eligible" ? "Uygun" : item.status === "insufficient_data" ? "Bilgi gerekli" : "Uygun değil"}</span></header>
           <div className="match-score"><strong>{item.score === null ? "—" : `%${item.score}`}</strong><small>Veri kapsamı %{item.coveragePercent}</small></div>
-          {item.reasons.length > 0 && <p>{item.reasons.slice(0, 4).join(" · ")}</p>}
+          {item.reasons.length > 0 && <p>{item.reasons.join(" · ")}</p>}
           {item.warnings.length > 0 && <em>{item.warnings.join(" ")}</em>}
+          {item.criteria.some((criterion) => criterion.outcome === "blocked" || criterion.outcome === "unknown") && <ul className="match-criteria">{item.criteria.filter((criterion) => criterion.outcome === "blocked" || criterion.outcome === "unknown").map((criterion) => <li key={criterion.key}>{criterion.detail}</li>)}</ul>}
           <footer><a href={`/ilan/${item.listing.slug}`} target="_blank" rel="noreferrer">İlanı aç</a><button type="button" disabled={busy || draft.listingReferences.includes(item.listing.reference)} onClick={() => void linkMatchedListing(item.listing.reference)}>{draft.listingReferences.includes(item.listing.reference) ? "Ekli" : "İlgilenilenlere ekle"}</button></footer>
         </article>)}</section>}
 

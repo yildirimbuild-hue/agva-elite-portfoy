@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "agentId": "AI-DEV-02",
+  "role": "DEVELOPER",
+  "status": "REVIEW_READY",
+  "activeWorkstreamId": "WS-004",
+  "heartbeatAt": "2026-07-23T18:22:31.7466450+03:00"
+}

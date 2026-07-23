@@ -50,7 +50,7 @@
 
 ## Güncel durum
 
-- Paket 3 — Portföy–Müşteri Eşleştirme: `0.2.0-rc.2`, `REVIEW_READY`
+- Paket 3 — Portföy–Müşteri Eşleştirme: `0.2.0-rc.3`, `REVIEW_READY`
 - Sonraki kapı: ayrı reviewer onayı
 - Sonraki özellik: yönetici raporları
 

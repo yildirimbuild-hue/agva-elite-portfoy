@@ -3,6 +3,7 @@
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LEAD_STAGES, summarizeWeeklyLeads } from "@/lib/lead-pipeline";
+import { AIConcierge } from "@/components/AIConcierge";
 import { CustomerCardModal } from "@/components/CustomerCardModal";
 import { ListingMatchesModal } from "@/components/ListingMatchesModal";
 import type { AdminSiteSettings, Appointment, AppointmentSettings, AppointmentStatus, Lead, LeadStage, Listing, ListingCopyResult, ListingInput, ListingPurpose, PropertyType } from "@/lib/types";
@@ -57,10 +58,58 @@ const WORK_DAYS = [
   { value: 4, label: "Per" }, { value: 5, label: "Cum" }, { value: 6, label: "Cmt" }, { value: 0, label: "Paz" },
 ];
 
+type HealthSnapshot = {
+  status: "ready" | "configuration_required";
+  environment: string;
+  catalog: { readable: boolean; publishedListings: number; storage: string };
+  settings: { readable: boolean };
+  appointments: { readable: boolean };
+  services: Record<string, boolean>;
+};
+
+type AuditEventSnapshot = {
+  id: string;
+  actor: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  details: Record<string, unknown>;
+  requestId: string;
+  createdAt: string;
+  hash: string;
+};
+
+type ErrorEventSnapshot = {
+  id: string;
+  source: string;
+  message: string;
+  severity: "warning" | "error" | "critical";
+  firstSeenAt: string;
+  lastSeenAt: string;
+  occurrenceCount: number;
+  resolved: boolean;
+};
+
+type OperationsSnapshot = {
+  auditEvents: AuditEventSnapshot[];
+  errorEvents: ErrorEventSnapshot[];
+};
+
+const SERVICE_LABELS: Record<string, string> = {
+  admin_password: "Admin parolası",
+  session_secret: "Oturum anahtarı",
+  deepseek: "DeepSeek",
+  elevenlabs: "ElevenLabs",
+  portfolio_storage: "Portföy deposu",
+  media_storage: "Görsel deposu",
+  whatsapp: "WhatsApp",
+  phone: "Telefon",
+};
+
 
 export function AdminPanel({ initialListings, initialSettings, initialLeads, initialAppointments, initialAppointmentSettings }: { initialListings: Listing[]; initialSettings: AdminSiteSettings; initialLeads: Lead[]; initialAppointments: Appointment[]; initialAppointmentSettings: AppointmentSettings | null }) {
   const router = useRouter();
-  const [view, setView] = useState<"listings" | "settings" | "leads" | "writer" | "appointments">("listings");
+  const [view, setView] = useState<"listings" | "settings" | "leads" | "writer" | "appointments" | "assistant" | "operations">("listings");
   const [listings, setListings] = useState(initialListings);
   const [leads, setLeads] = useState(initialLeads);
   const [leadsMessage, setLeadsMessage] = useState("");
@@ -93,6 +142,10 @@ export function AdminPanel({ initialListings, initialSettings, initialLeads, ini
   const [imageUrl, setImageUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [health, setHealth] = useState<HealthSnapshot | null>(null);
+  const [operations, setOperations] = useState<OperationsSnapshot | null>(null);
+  const [operationsBusy, setOperationsBusy] = useState(false);
+  const [operationsMessage, setOperationsMessage] = useState("");
 
   const weeklyLeads = useMemo(() => summarizeWeeklyLeads(leads), [leads]);
   const filteredLeads = useMemo(() => {
@@ -215,6 +268,39 @@ export function AdminPanel({ initialListings, initialSettings, initialLeads, ini
     });
     const result = await response.json();
     if (response.ok) setListings((current) => current.map((item) => item.id === listing.id ? result : item));
+  }
+
+  async function refreshListings() {
+    const response = await fetch("/api/admin/listings", { cache: "no-store" });
+    const payload = await response.json();
+    if (response.ok && Array.isArray(payload)) {
+      setListings(payload);
+      return;
+    }
+    setMessage(payload?.error ?? "Portföy listesi yenilenemedi.");
+  }
+
+  async function refreshOperations() {
+    setOperationsBusy(true);
+    setOperationsMessage("");
+    try {
+      const [healthResponse, operationsResponse] = await Promise.all([
+        fetch("/api/health", { cache: "no-store" }),
+        fetch("/api/admin/operations", { cache: "no-store" }),
+      ]);
+      const [healthPayload, operationsPayload] = await Promise.all([
+        healthResponse.json(),
+        operationsResponse.json(),
+      ]);
+      if (!operationsResponse.ok) throw new Error(operationsPayload?.error ?? "Sistem kayıtları yüklenemedi.");
+      if (!healthPayload?.status || !healthPayload?.catalog || !healthPayload?.services) throw new Error("Sistem sağlığı yanıtı geçersiz.");
+      setHealth(healthPayload);
+      setOperations(operationsPayload);
+    } catch (error) {
+      setOperationsMessage(error instanceof Error ? error.message : "Sistem verileri yüklenemedi.");
+    } finally {
+      setOperationsBusy(false);
+    }
   }
 
   function exportData() {
@@ -575,7 +661,7 @@ export function AdminPanel({ initialListings, initialSettings, initialLeads, ini
     <main className="admin-shell">
       <aside className="admin-sidebar">
         <a className="admin-brand" href="/"><span>İK</span><div><strong>İKİSU</strong><small>EMLAK YÖNETİMİ</small></div></a>
-        <nav><button className={view === "listings" ? "active" : ""} type="button" onClick={() => { setView("listings"); setEditorOpen(false); }}>▦ Portföy</button><button className={view === "leads" ? "active" : ""} type="button" onClick={() => { setView("leads"); setEditorOpen(false); void refreshLeads(); }}>☎ CRM hattı{leads.length > 0 ? ` (${leads.length})` : ""}</button><button className={view === "appointments" ? "active" : ""} type="button" onClick={() => { setView("appointments"); setEditorOpen(false); void refreshAppointments(); }}>▣ Randevular{appointmentStats.pending > 0 ? ` (${appointmentStats.pending})` : ""}</button><button className={view === "writer" ? "active" : ""} type="button" onClick={() => { setView("writer"); setEditorOpen(false); }}>✦ İlan & SEO yazarı</button><button className={view === "settings" ? "active" : ""} type="button" onClick={() => { setView("settings"); setEditorOpen(false); }}>⚙ Site ve AI ayarları</button><a href="/" target="_blank" rel="noreferrer">↗ Siteyi görüntüle</a></nav>
+        <nav><button className={view === "listings" ? "active" : ""} type="button" onClick={() => { setView("listings"); setEditorOpen(false); }}>▦ Portföy</button><button className={view === "leads" ? "active" : ""} type="button" onClick={() => { setView("leads"); setEditorOpen(false); void refreshLeads(); }}>☎ CRM hattı{leads.length > 0 ? ` (${leads.length})` : ""}</button><button className={view === "appointments" ? "active" : ""} type="button" onClick={() => { setView("appointments"); setEditorOpen(false); void refreshAppointments(); }}>▣ Randevular{appointmentStats.pending > 0 ? ` (${appointmentStats.pending})` : ""}</button><button className={view === "writer" ? "active" : ""} type="button" onClick={() => { setView("writer"); setEditorOpen(false); }}>✦ İlan & SEO yazarı</button><button className={view === "assistant" ? "active" : ""} type="button" onClick={() => { setView("assistant"); setEditorOpen(false); }}>✦ Yönetici AI</button><button className={view === "operations" ? "active" : ""} type="button" onClick={() => { setView("operations"); setEditorOpen(false); void refreshOperations(); }}>◉ Sistem durumu</button><button className={view === "settings" ? "active" : ""} type="button" onClick={() => { setView("settings"); setEditorOpen(false); }}>⚙ Site ve AI ayarları</button><a href="/" target="_blank" rel="noreferrer">↗ Siteyi görüntüle</a></nav>
         <div className="admin-sidebar-foot"><button type="button" onClick={logout}>Oturumu kapat</button></div>
       </aside>
 
@@ -708,6 +794,48 @@ export function AdminPanel({ initialListings, initialSettings, initialLeads, ini
         </div>
       </section>}
 
+      {view === "operations" && <section className="admin-main operations-page">
+        <header className="admin-topbar"><div><span>OPERASYON GÖRÜNÜRLÜĞÜ</span><h1>Sistem durumu</h1></div><button className="admin-primary" type="button" disabled={operationsBusy} onClick={() => void refreshOperations()}>{operationsBusy ? "Yükleniyor..." : "Sistem verilerini yenile"}</button></header>
+        {operationsMessage && <div className="admin-message operations-error">{operationsMessage}<button type="button" onClick={() => setOperationsMessage("")}>×</button></div>}
+        <div className="operations-stats">
+          <article data-status={health?.status === "ready" ? "ok" : "attention"}><span>Genel sağlık</span><strong>{health ? health.status === "ready" ? "Hazır" : "Yapılandırma gerekli" : "—"}</strong><small>{health?.environment ?? "Henüz kontrol edilmedi"}</small></article>
+          <article data-status={health?.catalog.readable ? "ok" : "attention"}><span>Portföy erişimi</span><strong>{health ? health.catalog.readable ? "Okunuyor" : "Erişilemiyor" : "—"}</strong><small>{health ? `${health.catalog.publishedListings} yayındaki ilan · ${health.catalog.storage}` : "Veri bekleniyor"}</small></article>
+          <article data-status={(operations?.errorEvents.filter((event) => !event.resolved).length ?? 0) === 0 ? "ok" : "attention"}><span>Açık hata</span><strong>{operations ? operations.errorEvents.filter((event) => !event.resolved).length : "—"}</strong><small>Maskelenmiş ve gruplanmış olaylar</small></article>
+          <article><span>Denetim olayı</span><strong>{operations?.auditEvents.length ?? "—"}</strong><small>Son 100 hash zincirli kayıt</small></article>
+        </div>
+
+        {!health && !operations && operationsBusy ? <div className="operations-loading">Sistem sağlığı ve operasyon kayıtları yükleniyor...</div> : <div className="operations-layout">
+          <section className="operations-card operations-health">
+            <header><div><span>CANLI KONTROLLER</span><h2>Servis ve veri kaynakları</h2></div><small>{health?.status === "ready" ? "Tüm zorunlu kontroller hazır" : "Eksik yapılandırmaları inceleyin"}</small></header>
+            {!health ? <p className="operations-empty">Sistem sağlığı henüz kontrol edilmedi.</p> : <div className="operations-checks">
+              <div data-status={health.catalog.readable ? "ok" : "missing"}><span>Portföy verisi</span><strong>{health.catalog.readable ? "Hazır" : "Erişilemiyor"}</strong></div>
+              <div data-status={health.settings.readable ? "ok" : "missing"}><span>Site ayarları</span><strong>{health.settings.readable ? "Hazır" : "Erişilemiyor"}</strong></div>
+              <div data-status={health.appointments.readable ? "ok" : "missing"}><span>Randevu takvimi</span><strong>{health.appointments.readable ? "Hazır" : "Erişilemiyor"}</strong></div>
+              {Object.entries(health.services).map(([key, configured]) => <div data-status={configured ? "ok" : "missing"} key={key}><span>{SERVICE_LABELS[key] ?? key}</span><strong>{configured ? "Yapılandırıldı" : "Eksik / kapalı"}</strong></div>)}
+            </div>}
+          </section>
+
+          <section className="operations-card operations-errors">
+            <header><div><span>MASKELENMİŞ TEKNİK KAYIT</span><h2>Hata olayları</h2></div><small>{operations?.errorEvents.length ?? 0} olay</small></header>
+            {!operations ? <p className="operations-empty">Hata olayları henüz yüklenmedi.</p> : operations.errorEvents.length === 0 ? <p className="operations-empty">Kayıtlı hata olayı yok.</p> : <div className="operations-event-list">{operations.errorEvents.map((event) => <article data-severity={event.severity} key={event.id}>
+              <header><strong>{event.source}</strong><span>{event.severity === "warning" ? "Uyarı" : event.severity === "critical" ? "Kritik" : "Hata"}</span></header>
+              <p>{event.message}</p>
+              <footer><span>Son görülme: {new Date(event.lastSeenAt).toLocaleString("tr-TR")}</span><strong>{event.occurrenceCount} kez</strong></footer>
+            </article>)}</div>}
+          </section>
+
+          <section className="operations-card operations-audit">
+            <header><div><span>DEĞİŞTİRMEYE DAYANIKLI İZ</span><h2>Denetim kayıtları</h2></div><small>{operations?.auditEvents.length ?? 0} olay</small></header>
+            {!operations ? <p className="operations-empty">Denetim kayıtları henüz yüklenmedi.</p> : operations.auditEvents.length === 0 ? <p className="operations-empty">Kayıtlı denetim olayı yok.</p> : <div className="operations-event-list">{operations.auditEvents.map((event) => <article key={event.id}>
+              <header><strong>{event.action}</strong><span>{new Date(event.createdAt).toLocaleString("tr-TR")}</span></header>
+              <p>{event.actor} · {event.entityType} · {event.entityId}</p>
+              {Object.keys(event.details).length > 0 && <code>{JSON.stringify(event.details)}</code>}
+              <footer><span>İstek: {event.requestId.slice(0, 8)}</span><strong>Hash: {event.hash.slice(0, 12)}</strong></footer>
+            </article>)}</div>}
+          </section>
+        </div>}
+      </section>}
+
       {view === "settings" && <section className="admin-main admin-settings-page">
         <header className="admin-topbar"><div><span>SİTE VE ENTEGRASYONLAR</span><h1>Ayarlar</h1></div><a className="admin-primary" href="/" target="_blank" rel="noreferrer">Siteyi kontrol et</a></header>
         {settingsMessage && <div className="admin-message">{settingsMessage}<button type="button" onClick={() => setSettingsMessage("")}>×</button></div>}
@@ -750,10 +878,19 @@ export function AdminPanel({ initialListings, initialSettings, initialLeads, ini
         </form>
       </section>}
 
+      {view === "assistant" && <section className="admin-main admin-settings-page">
+        <header className="admin-topbar"><div><span>MEVCUT PORTFÖY YÖNETİMİ</span><h1>Yönetici AI</h1></div></header>
+        <div className="admin-settings-card">
+          <header><div><span>DOĞRUDAN ERİŞİM</span><h2>AI ile ilan yönetin</h2></div></header>
+          <p>Mevcut admin oturumunuzla yeni ilan ekleyebilir; IKS referansını yazarak bir ilanı düzenleyebilir, yayın durumunu değiştirebilir veya silme onayı hazırlayabilirsiniz. Kaydetme ve silme işlemleri mevcut sunucu yetkisini ve açık onay adımlarını kullanır.</p>
+        </div>
+        <AIConcierge adminAccess initiallyOpen onListingsChanged={() => { void refreshListings(); }} />
+      </section>}
+
       {matchingListing && <ListingMatchesModal
         listing={matchingListing}
         onClose={() => setMatchingListing(null)}
-        onOpenCustomer={(leadId) => setSelectedLeadId(leadId)}
+        onOpenCustomer={(leadId) => { setMatchingListing(null); setSelectedLeadId(leadId); }}
       />}
 
       {selectedLead && <CustomerCardModal

@@ -1,4 +1,4 @@
-# Kabul Kriterleri — 0.2.0-rc.2
+# Kabul Kriterleri — 0.2.0-rc.3
 
 ## Paket 3 — Portföy–Müşteri Eşleştirme
 

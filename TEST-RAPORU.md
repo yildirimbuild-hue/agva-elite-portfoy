@@ -230,3 +230,66 @@ Gerçek DeepSeek anahtarı teslim paketine dahil edilmedi. Randevu niyeti ve aç
 - Sentetik müşteri test sonunda temizlendi.
 - Bağımsız review: PENDING
 
+
+
+# Paket 3 Saha Düzeltme Testi — 0.2.0-rc.3
+
+Tarih: 19 Temmuz 2026
+
+## Otomatik kontroller
+
+- `npm ci`: PASS — 62 paket, 0 güvenlik açığı
+- `npm run typecheck`: PASS
+- `npm run test:features`: PASS — 23/23
+- `npm run validate:data`: PASS — 24 benzersiz kayıt
+- Yayındaki ilan: 22
+- `npm run build`: PASS
+- Production start: PASS
+- Admin ve eşleştirme HTTP/API smoke: PASS
+
+## Gerçek tarayıcı kullanıcı akışı
+
+Chromium ile aşağıdaki görünür akışlar tıklanarak doğrulandı:
+
+1. Admin giriş
+2. CRM hattı → Müşteri kartı
+3. Görünür Eşleşmeler sekmesi
+4. İyi eşleşme ve bütün nedenler
+5. İlgilenilenlere ekleme ve yeniden açınca kalıcılık
+6. Bütçe elemesi
+7. Satıcı rolü elemesi
+8. Bilinmeyen istenmeyen özellikte Bilgi gerekli
+9. Yalnız kesin kriterli puansız uygun sonuç
+10. Portföy → Eşleşmeler → Müşteri kartını aç
+
+Sonuç: `PASS_9_OF_9` ana kabul senaryosu; yardımcı giriş ve profil hazırlama adımları da PASS.
+
+## Temizlik
+
+Sentetik müşteri, randevu, audit ve hata kayıtları temizlendi. Kaynak demo JSON dosyaları parent candidate içeriğine birebir geri döndürüldü. `.env.local`, `.next`, `node_modules` ve `tsconfig.tsbuildinfo` release adayından kaldırıldı.
+
+## Hüküm
+
+Kod, API, build ve gerçek kullanıcı erişilebilirliği PASS. Ayrı reviewer `APPROVED` bekleniyor.
+
+
+---
+
+# 0.2.0-rc.3 Paketleme Öncesi Son Doğrulama
+
+Tarih: 19 Temmuz 2026
+
+- Parent candidate SHA-256: **PASS** — `288003c0d34c94864791c151f644db06e6972f35966eea1c4b7d7fd18f1e9391`
+- Rollback ZIP SHA-256: **PASS** — `97326260119885402106db79dcf10ea39ab359ef66dd51ae14879b22538c84af`
+- Temiz `npm ci`: **PASS**, 0 güvenlik açığı
+- TypeScript: **PASS**
+- Özellik ve regresyon testleri: **23/23 PASS**
+- Veri doğrulama: **PASS**, 24 benzersiz kayıt
+- Production build: **PASS**
+- Production start: **PASS**
+- HTTP smoke: ana sayfa **200**, admin **200**, yetkisiz eşleştirme API **401**
+- Önceden kaydedilmiş gerçek Chromium kullanıcı yolculuğu: **9/9 PASS**; paketleme sırasında uygulama kaynak kodu değişmemiştir
+- Paketleme yetkisi: **PASS** — kullanıcı bağımsız `PAKETLE` komutu verdi
+- Bağımsız reviewer: **PENDING**
+
+**Artefakt hükmü:** `agva-elite-portfoy-v0.2.0-rc.3-review-candidate.zip` yalnız review candidate olarak paketlenir; doğrulanmış release değildir.

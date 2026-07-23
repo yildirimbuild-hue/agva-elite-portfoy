@@ -1,29 +1,44 @@
 {
   "schemaVersion": 1,
   "project": "İKİSU Emlak — Ağva Elite Portföy",
-  "version": "0.2.0-rc.2",
-  "status": "REVIEW_CANDIDATE",
+  "version": "0.2.0-rc.3",
+  "status": "PACKAGED_REVIEW_CANDIDATE",
   "packageAuthorized": true,
   "requiredAuthorizationCommand": "PAKETLE",
-  "source": {
+  "parentCandidate": {
+    "file": "agva-elite-portfoy-v0.2.0-rc.2-review-candidate(1).zip",
+    "sha256": "288003c0d34c94864791c151f644db06e6972f35966eea1c4b7d7fd18f1e9391"
+  },
+  "verifiedRelease": {
     "file": "agva-elite-portfoy-v0.1.0-ygis-bootstrap(2).zip",
     "sha256": "97326260119885402106db79dcf10ea39ab359ef66dd51ae14879b22538c84af"
   },
   "baseline": {
     "npmCi": "PASS",
     "typecheck": "PASS",
-    "featureTests": "PASS_20_OF_20",
+    "featureTests": "PASS_23_OF_23",
     "dataValidation": "PASS_24_UNIQUE_22_PUBLISHED",
     "productionBuildStart": "PASS",
-    "httpSmoke": "PASS"
+    "httpSmoke": "PASS",
+    "realBrowserUserFlow": "PASS_9_OF_9",
+    "testDataCleanup": "PASS",
+    "cleanWorkspace": "PASS",
+    "secretsScan": "PASS_NO_REAL_KEYS_OR_ENV_LOCAL"
   },
   "rollback": {
     "file": "agva-elite-portfoy-v0.1.0-ygis-bootstrap(2).zip",
     "sha256": "97326260119885402106db79dcf10ea39ab359ef66dd51ae14879b22538c84af"
   },
-  "generatedAt": "2026-07-18T18:30:00+03:00",
+  "generatedAt": "2026-07-19T15:46:05+03:00",
   "selectedWorkstreams": [
     "WS-003"
   ],
-  "independentReview": "PENDING"
+  "independentReview": "PENDING",
+  "authorizationCommand": "PAKETLE",
+  "artifact": {
+    "file": "agva-elite-portfoy-v0.2.0-rc.3-review-candidate.zip",
+    "type": "REVIEW_CANDIDATE_ZIP",
+    "verifiedRelease": false,
+    "sha256Record": "agva-elite-portfoy-v0.2.0-rc.3-review-candidate-SHA256.json"
+  }
 }

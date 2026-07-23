@@ -1,5 +1,20 @@
 # Değişiklik Günlüğü
 
+## [0.2.0-rc.3] — 2026-07-19 — REVIEW_READY
+
+- Müşteri kartı üst menüsüne görünür **Eşleşmeler** sekmesi eklendi.
+- Eşleşme sekmesinin yükleme durumunda sonsuza kadar kalmasına yol açan effect yarış koşulu düzeltildi.
+- Uygunluk nedenleri dört maddeyle kesilmek yerine eksiksiz gösterilmeye başlandı.
+- Bütçe, rol ve bilinmeyen özellik engellerinin açıklayıcı kriterleri ekranda görünür hâle getirildi.
+- Portföy eşleşme modalından müşteri kartına geçiş tek sahipli ve temiz modal geçişine dönüştürüldü.
+- `UI-REACHABILITY-AND-USER-FLOW-GATE.md` uygulama köküne eklendi.
+- Erişim noktası ve modal bağlantısı için regresyon testleri eklendi.
+- TypeScript PASS; 23/23 otomatik test PASS; production build/start PASS.
+- Gerçek Chromium kullanıcı akışı 9/9 PASS.
+- Sentetik müşteri, randevu, audit ve test verileri release adayından temizlendi.
+- Kullanıcının bağımsız `PAKETLE` yetkisiyle `agva-elite-portfoy-v0.2.0-rc.3-review-candidate.zip` review candidate ZIP olarak hazırlandı.
+- Bağımsız reviewer onayı bekleniyor; artefakt doğrulanmış release değildir.
+
 ## [0.2.0-rc.2] — 2026-07-18 — REVIEW_READY
 
 - Çift yönlü portföy–müşteri eşleştirme eklendi.

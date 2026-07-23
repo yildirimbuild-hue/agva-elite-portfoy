@@ -28,10 +28,18 @@
     {
       "agentId": "AI-DEV-01",
       "role": "DEVELOPER",
-      "status": "IDLE",
+      "status": "REVIEW_READY",
       "registeredAt": "2026-07-18T18:30:00+03:00",
-      "heartbeatAt": "2026-07-18T18:30:00+03:00",
-      "activeWorkstreamId": null
+      "heartbeatAt": "2026-07-19T15:25:41+03:00",
+      "activeWorkstreamId": "WS-003"
+    },
+    {
+      "agentId": "AI-DEV-02",
+      "role": "DEVELOPER",
+      "status": "REVIEW_READY",
+      "registeredAt": "2026-07-23T17:34:25.2977735+03:00",
+      "heartbeatAt": "2026-07-23T18:22:31.7466450+03:00",
+      "activeWorkstreamId": "WS-004"
     }
   ]
 }
