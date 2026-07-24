@@ -47,7 +47,7 @@
     },
     {
       "workstreamId": "WS-004",
-      "title": "İlan Detay Favorileri",
+      "title": "Uçtan Uca Ziyaretçi Favorileri",
       "state": "REVIEW_READY",
       "ownerAgentId": "AI-DEV-02",
       "reviewerAgentId": "AI-REVIEW-01",
@@ -57,8 +57,10 @@
       "allowedPaths": [
         "src/components/ListingDetail.tsx",
         "src/components/ListingDetail.module.css",
+        "src/components/PortfolioApp.tsx",
+        "src/app/globals.css",
         "src/lib/listing-favorites.ts",
-        "tests/listing-favorites.test.mjs",
+        "TESTS/listing-favorites.test.mjs",
         "package.json",
         "project-control-files",
         ".ai-control/**"
@@ -66,7 +68,7 @@
       "blockers": [
         "INDEPENDENT_REVIEW_PENDING"
       ],
-      "updatedAt": "2026-07-23T18:22:31.7466450+03:00"
+      "updatedAt": "2026-07-24T08:56:23.8802079+03:00"
     }
   ]
 }

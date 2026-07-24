@@ -19,3 +19,13 @@ DOSYALAR: src/components/ListingDetail.tsx, src/components/ListingDetail.module.
 TEST: RED 0/3; hedefli GREEN 3/3; resmi test:features 30/30; TypeScript PASS; browser E2E PASS; production build PASS; genel doğrulama SONUC: YESIL; Eval REVIEW_READY gate PASS
 BLOKER: INDEPENDENT_REVIEW_PENDING
 SONRAKİ: AI-REVIEW-01 bağımsız incelemesi.
+
+## 2026-07-24T08:56:23.8802079+03:00 — EVT-WS004-CATALOG-REVIEW-READY
+
+WORKSTREAM: WS-004
+DURUM: REVIEW_READY
+YAPILAN: Detay favorisi katalog kartı, görünür sayaç, yalnız yayındaki favorileri gösteren filtre, boş durum, sekmeler arası eşitleme ve erişilebilir geri bildirimle tam tüketici zincirine bağlandı.
+DOSYALAR: src/components/PortfolioApp.tsx, src/app/globals.css, src/lib/listing-favorites.ts, TESTS/listing-favorites.test.mjs ve WS-004 kontrol kayıtları
+TEST: RED 3/5; hedefli GREEN 5/5; resmi test:features 32/32; TypeScript PASS; production build PASS; yerel ana sayfa HTTP 200; genel doğrulama SONUC: YESIL; kullanıcı ikon, buton ve ekleme işlemini gerçek tarayıcıda kabul etti; Eval REVIEW_READY gate PASS
+BLOKER: INDEPENDENT_REVIEW_PENDING; katalog sayaç/filtre ve mobil görünüm için otomatik Chrome turu çalışmadı
+SONRAKİ: AI-REVIEW-01 bağımsız incelemesi.

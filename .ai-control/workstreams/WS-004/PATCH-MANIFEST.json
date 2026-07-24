@@ -3,7 +3,7 @@
   "workstreamId": "WS-004",
   "baseVersion": "0.2.0-rc.3+workspace-approved-2026-07-23",
   "baseSha256": "7feb9dae51873fa1ab8f1ed875c6c1b9641be820c179bdb2be8ab7714972ef3f",
-  "generatedAt": "2026-07-23T18:22:31.7466450+03:00",
+  "generatedAt": "2026-07-24T08:56:23.8802079+03:00",
   "files": [
     {
       "path": "src/components/ListingDetail.tsx",
@@ -21,13 +21,25 @@
       "path": "src/lib/listing-favorites.ts",
       "change": "ADDED",
       "beforeSha256": null,
-      "afterSha256": "7f4314ed724ac920d74af2f33c6c84c2ea711ce64088d3429970881a1c2f708e"
+      "afterSha256": "add71b3824bd9cb610986149abb830c59811284bc8324acfefd98079cbc29445"
     },
     {
-      "path": "tests/listing-favorites.test.mjs",
+      "path": "TESTS/listing-favorites.test.mjs",
       "change": "ADDED",
       "beforeSha256": null,
-      "afterSha256": "5741162911e2ec639be2febedd60e953e8ff8b22d2cce56a8dd694629d348ddd"
+      "afterSha256": "ffa9f30c39cc33966d1dc8550be28d9a078d854598f66eb46b59dec95e97258b"
+    },
+    {
+      "path": "src/components/PortfolioApp.tsx",
+      "change": "MODIFIED",
+      "beforeSha256": "39a2f950ea199736f8cac893373aeb7bbe8ab3bc6fb62101e73900365f4fffa5",
+      "afterSha256": "daae4ed747842250a24c93fbdd073807bc333b445e1eab690de4b15c330ac4bf"
+    },
+    {
+      "path": "src/app/globals.css",
+      "change": "MODIFIED",
+      "beforeSha256": "3ffa159ff8588fcb3c6e7826c0a577eb4988a74eca9151a828985deeebeb9b7a",
+      "afterSha256": "e7d93d71ba49bab6a95c02427703ed9b57b9b6fd126c64ab656b878893884fe9"
     },
     {
       "path": "package.json",
@@ -37,8 +49,8 @@
     }
   ],
   "notes": [
-    "Git metadatası boş olduğu için klasik git diff yerine kullanıcı onaylı çalışma alanı bileşik karması ve dosya kilidi başlangıç karmaları kullanıldı.",
-    "Görev öncesinde var olan 10 paket-manifest sapmasına dokunulmadı.",
+    "İlk detay favorisi dosyaları çalışma alanı tabanına göre, katalog revizyonu dosyaları 2172bce2fcedc387bde5ba0de5120bc61f77fe36 commitine göre SHA-256 ile karşılaştırıldı.",
+    "Katalog revizyonu `agent/rc3-ve-favoriler` dalında sürdürüldü.",
     "data/ altındaki JSON şemaları, package-lock.json ve bağımlılıklar değiştirilmedi."
   ]
 }

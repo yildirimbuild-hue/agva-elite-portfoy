@@ -23,6 +23,11 @@ export function favoriIlanKimlikleriniCoz(rawValue: string | null): string[] {
   }
 }
 
+export function favoriIlanlariSec<T extends { id: string }>(ilanlar: T[], favoriKimlikleri: string[]): T[] {
+  const favoriKumesi = new Set(favoriKimlikleri.map(normalizeKimlik).filter(Boolean));
+  return ilanlar.filter((ilan) => favoriKumesi.has(ilan.id));
+}
+
 export function favoriIlanDurumunuDepodaDegistir(depo: FavoriDeposu, ilanKimligi: string) {
   const normalizedKimlik = normalizeKimlik(ilanKimligi);
   if (!normalizedKimlik) return false;

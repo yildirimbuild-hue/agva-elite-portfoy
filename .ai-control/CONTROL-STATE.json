@@ -7,8 +7,8 @@
   "integrationBranch": "NOT_APPLICABLE_UNTIL_SHARED_REPOSITORY",
   "coordinationStatus": "REVIEW_REQUIRED",
   "freezeNewWork": true,
-  "lastEventId": "EVT-WS004-REVIEW-READY",
-  "updatedAt": "2026-07-23T18:22:31.7466450+03:00",
+  "lastEventId": "EVT-WS004-CATALOG-REVIEW-READY",
+  "updatedAt": "2026-07-24T08:56:23.8802079+03:00",
   "parentSourceSha256": "722e0cf76b0c852888047b887cb9ffaa2e067070ffc1044fda5e79d58e117ca1",
   "verifiedReleaseSha256": "97326260119885402106db79dcf10ea39ab359ef66dd51ae14879b22538c84af",
   "candidateParentSha256": "288003c0d34c94864791c151f644db06e6972f35966eea1c4b7d7fd18f1e9391"

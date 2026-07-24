@@ -2,6 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AIConcierge } from "@/components/AIConcierge";
+import {
+  FAVORI_ILANLAR_DEPOLAMA_ANAHTARI,
+  favoriIlanDurumunuDepodaDegistir,
+  favoriIlanKimlikleriniCoz,
+  favoriIlanlariSec,
+} from "@/lib/listing-favorites";
 import type { CompanyProfile, Listing } from "@/lib/types";
 
 const formatMoney = (amount: number, currency: Listing["currency"]) =>
@@ -33,13 +39,22 @@ export default function PortfolioApp({ listings, company }: { listings: Listing[
   const [sort, setSort] = useState("featured");
   const [visible, setVisible] = useState(12);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [favoriIlanKimlikleri, setFavoriIlanKimlikleri] = useState<string[]>([]);
+  const [favoriHazir, setFavoriHazir] = useState(false);
+  const [sadeceFavoriler, setSadeceFavoriler] = useState(false);
+  const [favoriBildirimi, setFavoriBildirimi] = useState("");
 
   const locations = useMemo(() => [...new Set(listings.map((item) => item.location))].sort(), [listings]);
   const propertyTypes = useMemo(() => [...new Set(listings.map((item) => item.propertyType))].sort(), [listings]);
+  const favoriIlanlari = useMemo(
+    () => favoriIlanlariSec(listings, favoriIlanKimlikleri),
+    [favoriIlanKimlikleri, listings],
+  );
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("tr-TR");
-    const next = listings.filter((item) => {
+    const kaynakIlanlar = sadeceFavoriler ? favoriIlanlari : listings;
+    const next = kaynakIlanlar.filter((item) => {
       const matchesText = !normalized || `${item.title} ${item.location} ${item.reference}`.toLocaleLowerCase("tr-TR").includes(normalized);
       return matchesText && (purpose === "Tümü" || item.purpose === purpose) &&
         (propertyType === "Tümü" || item.propertyType === propertyType) &&
@@ -51,12 +66,40 @@ export default function PortfolioApp({ listings, company }: { listings: Listing[
       if (sort === "newest") return b.updatedAt.localeCompare(a.updatedAt);
       return Number(b.featured) - Number(a.featured);
     });
-  }, [listings, location, propertyType, purpose, query, sort]);
+  }, [favoriIlanlari, listings, location, propertyType, purpose, query, sadeceFavoriler, sort]);
 
-  useEffect(() => setVisible(12), [query, purpose, propertyType, location, sort]);
+  useEffect(() => {
+    try {
+      setFavoriIlanKimlikleri(
+        favoriIlanKimlikleriniCoz(window.localStorage.getItem(FAVORI_ILANLAR_DEPOLAMA_ANAHTARI)),
+      );
+    } catch {
+      setFavoriBildirimi("Favoriler bu tarayıcıda okunamıyor. Depolama iznini kontrol edin.");
+    } finally {
+      setFavoriHazir(true);
+    }
+
+    const depolamaDegisince = (event: StorageEvent) => {
+      if (event.key !== FAVORI_ILANLAR_DEPOLAMA_ANAHTARI && event.key !== null) return;
+      try {
+        const hamDeger = event.key === null
+          ? window.localStorage.getItem(FAVORI_ILANLAR_DEPOLAMA_ANAHTARI)
+          : event.newValue;
+        setFavoriIlanKimlikleri(favoriIlanKimlikleriniCoz(hamDeger));
+      } catch {
+        setFavoriBildirimi("Favoriler diğer sekmeyle eşitlenemedi.");
+      }
+    };
+
+    window.addEventListener("storage", depolamaDegisince);
+    return () => window.removeEventListener("storage", depolamaDegisince);
+  }, []);
+
+  useEffect(() => setVisible(12), [query, purpose, propertyType, location, sadeceFavoriler, sort]);
 
   const selectPurpose = (value: string) => {
     setPurpose(value);
+    setSadeceFavoriler(false);
     setMenuOpen(false);
     document.querySelector("#portfoy")?.scrollIntoView({ behavior: "smooth" });
   };
@@ -66,6 +109,34 @@ export default function PortfolioApp({ listings, company }: { listings: Listing[
     setPurpose("Tümü");
     setPropertyType("Tümü");
     setLocation("Tümü");
+  };
+
+  const favorileriGoster = () => {
+    clearFilters();
+    setSadeceFavoriler(true);
+    setMenuOpen(false);
+    document.querySelector("#portfoy")?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const tumIlanlariGoster = () => {
+    clearFilters();
+    setSadeceFavoriler(false);
+  };
+
+  const favoriyiDegistir = (listing: Listing) => {
+    try {
+      const favoride = favoriIlanDurumunuDepodaDegistir(window.localStorage, listing.id);
+      setFavoriIlanKimlikleri(
+        favoriIlanKimlikleriniCoz(window.localStorage.getItem(FAVORI_ILANLAR_DEPOLAMA_ANAHTARI)),
+      );
+      setFavoriBildirimi(
+        favoride
+          ? `${listing.title} favorilerinize eklendi.`
+          : `${listing.title} favorilerinizden çıkarıldı.`,
+      );
+    } catch {
+      setFavoriBildirimi("Favoriler şu anda kaydedilemiyor. Tarayıcı depolama iznini kontrol edin.");
+    }
   };
 
   const whatsappDigits = company.whatsappNumber.replace(/\D/g, "");
@@ -89,7 +160,10 @@ export default function PortfolioApp({ listings, company }: { listings: Listing[
           <button type="button" onClick={() => selectPurpose("Satılık")}>Satılık</button>
           <button type="button" onClick={() => selectPurpose("Kiralık")}>Kiralık</button>
           <button type="button" onClick={() => { setPropertyType("Arsa"); selectPurpose("Tümü"); }}>Arsa</button>
-          <a href="#portfoy" onClick={() => setMenuOpen(false)}>Tüm portföy</a>
+          <a href="#portfoy" onClick={() => { tumIlanlariGoster(); setMenuOpen(false); }}>Tüm portföy</a>
+          <button type="button" className={sadeceFavoriler ? "active" : ""} onClick={favorileriGoster}>
+            Favorilerim ({favoriIlanlari.length})
+          </button>
           <a className="admin-nav-link" href="/admin">Admin paneli</a>
         </nav>
         {whatsappDigits ? <a className="header-contact" href={whatsappHref()} target="_blank" rel="noreferrer">WhatsApp</a> : <button className="header-contact" type="button" onClick={contactMissing}>WhatsApp</button>}
@@ -155,8 +229,8 @@ export default function PortfolioApp({ listings, company }: { listings: Listing[
         <section className="portfolio-catalog page-pad" id="portfoy">
           <div className="catalog-title-row">
             <div>
-              <span className="eyebrow dark"><span>GÜNCEL PORTFÖY</span></span>
-              <h2>Tüm ilanlar</h2>
+              <span className="eyebrow dark"><span>{sadeceFavoriler ? "KAYDETTİKLERİNİZ" : "GÜNCEL PORTFÖY"}</span></span>
+              <h2>{sadeceFavoriler ? "Favori ilanlarım" : "Tüm ilanlar"}</h2>
             </div>
             <p>{filtered.length} ilan bulundu</p>
           </div>
@@ -164,8 +238,11 @@ export default function PortfolioApp({ listings, company }: { listings: Listing[
           <div className="catalog-toolbar">
             <div className="quick-tabs">
               {["Tümü", "Satılık", "Kiralık"].map((item) => (
-                <button key={item} className={purpose === item ? "active" : ""} type="button" onClick={() => setPurpose(item)}>{item}</button>
+                <button key={item} className={!sadeceFavoriler && purpose === item ? "active" : ""} type="button" onClick={() => selectPurpose(item)}>{item}</button>
               ))}
+              <button className={sadeceFavoriler ? "active" : ""} type="button" onClick={favorileriGoster}>
+                Favorilerim ({favoriIlanlari.length})
+              </button>
             </div>
             <select value={propertyType} onChange={(event) => setPropertyType(event.target.value)} aria-label="Emlak tipi">
               <option>Tümü</option>{propertyTypes.map((item) => <option key={item}>{item}</option>)}
@@ -181,45 +258,65 @@ export default function PortfolioApp({ listings, company }: { listings: Listing[
             </select>
           </div>
 
-          {filtered.length === 0 ? (
+          <div className="favorite-feedback" aria-live="polite">{favoriBildirimi}</div>
+
+          {sadeceFavoriler && favoriIlanlari.length === 0 ? (
+            <div className="empty-results">
+              <h3>Henüz favori ilanınız yok.</h3>
+              <p>Beğendiğiniz ilanların kalp simgesine dokunarak listenizi oluşturabilirsiniz.</p>
+              <button type="button" onClick={tumIlanlariGoster}>Tüm ilanları göster</button>
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="empty-results"><h3>Bu kriterlerde ilan bulunamadı.</h3><button type="button" onClick={clearFilters}>Filtreleri temizle</button></div>
           ) : (
             <div className="property-grid">
-              {filtered.slice(0, visible).map((listing) => (
-                <article className="property-card" key={listing.id}>
-                  <a className="property-hit" href={`/ilan/${listing.slug}`} aria-label={`${listing.title} detayını aç`} />
-                  <div className="property-image">
-                    {listing.images[0]
-                      ? <img src={listing.images[0]} alt={listing.title} />
-                      : <div className="listing-image-empty"><span>İKİSU</span><strong>Fotoğraf hazırlanıyor</strong></div>}
-                    <div className="property-badges">
-                      {listing.urgent && <span className="badge-urgent">Çok acil</span>}
-                      {discountPercent(listing) > 0 && <span className="badge-discount">%{discountPercent(listing)} fiyat düştü</span>}
-                      <span className="badge-purpose">{listing.purpose}</span>
-                      {listing.featured && <span className="badge-featured">Öne çıkan</span>}
+              {filtered.slice(0, visible).map((listing) => {
+                const favoride = favoriIlanKimlikleri.includes(listing.id);
+                return (
+                  <article className="property-card" key={listing.id}>
+                    <a className="property-hit" href={`/ilan/${listing.slug}`} aria-label={`${listing.title} detayını aç`} />
+                    <div className="property-image">
+                      {listing.images[0]
+                        ? <img src={listing.images[0]} alt={listing.title} />
+                        : <div className="listing-image-empty"><span>İKİSU</span><strong>Fotoğraf hazırlanıyor</strong></div>}
+                      <div className="property-badges">
+                        {listing.urgent && <span className="badge-urgent">Çok acil</span>}
+                        {discountPercent(listing) > 0 && <span className="badge-discount">%{discountPercent(listing)} fiyat düştü</span>}
+                        <span className="badge-purpose">{listing.purpose}</span>
+                        {listing.featured && <span className="badge-featured">Öne çıkan</span>}
+                      </div>
+                      <button
+                        className={favoride ? "favorite active" : "favorite"}
+                        type="button"
+                        aria-label={favoride ? "Favorilerden çıkar" : "Favorilere ekle"}
+                        aria-pressed={favoride}
+                        disabled={!favoriHazir}
+                        onClick={() => favoriyiDegistir(listing)}
+                      >
+                        {favoride ? "♥" : "♡"}
+                      </button>
                     </div>
-                    <button className="favorite" type="button" aria-label="Favoriye ekle">♡</button>
-                  </div>
-                  <div className="property-content">
-                    <div className="property-meta"><span>{listing.propertyType}</span><span>{listing.reference}</span></div>
-                    <h3>{listing.title}</h3>
-                    <p className="property-location">{listing.location} · {listing.district}</p>
-                    <div className="property-specs">
-                      {listing.rooms !== "—" && <span>{listing.rooms}</span>}
-                      {listing.grossArea > 0 && <span>{listing.grossArea} m²</span>}
-                      {listing.landArea > 0 && <span>{listing.landArea} m² arsa</span>}
+                    <div className="property-content">
+                      <div className="property-meta"><span>{listing.propertyType}</span><span>{listing.reference}</span></div>
+                      <h3>{listing.title}</h3>
+                      <p className="property-location">{listing.location} · {listing.district}</p>
+                      <div className="property-specs">
+                        {listing.rooms !== "—" && <span>{listing.rooms}</span>}
+                        {listing.grossArea > 0 && <span>{listing.grossArea} m²</span>}
+                        {listing.landArea > 0 && <span>{listing.landArea} m² arsa</span>}
+                      </div>
+                      <div className="property-price">
+                        <div>{listing.oldPrice > listing.price && <del>{formatMoney(listing.oldPrice, listing.currency)}</del>}<strong>{formatPrice(listing)}</strong></div>
+                        <span>Detaylar →</span>
+                      </div>
+                      <div className="property-contact-actions">
+                        {whatsappDigits ? <a href={whatsappHref(listing)} target="_blank" rel="noreferrer">WhatsApp’tan yaz</a> : <button type="button" onClick={contactMissing}>WhatsApp’tan yaz</button>}
+                        {phoneNumber ? <a href={`tel:${phoneNumber}`}>Hemen ara</a> : <button type="button" onClick={contactMissing}>Hemen ara</button>}
+                      </div>
                     </div>
-                    <div className="property-price">
-                      <div>{listing.oldPrice > listing.price && <del>{formatMoney(listing.oldPrice, listing.currency)}</del>}<strong>{formatPrice(listing)}</strong></div>
-                      <span>Detaylar →</span>
-                    </div>
-                    <div className="property-contact-actions">
-                      {whatsappDigits ? <a href={whatsappHref(listing)} target="_blank" rel="noreferrer">WhatsApp’tan yaz</a> : <button type="button" onClick={contactMissing}>WhatsApp’tan yaz</button>}
-                      {phoneNumber ? <a href={`tel:${phoneNumber}`}>Hemen ara</a> : <button type="button" onClick={contactMissing}>Hemen ara</button>}
-                    </div>
-                  </div>
-                </article>
-              ))}
+                  </article>
+                );
+              })}
             </div>
           )}
 
@@ -235,7 +332,7 @@ export default function PortfolioApp({ listings, company }: { listings: Listing[
       <footer className="catalog-footer page-pad">
         <div className="footer-logo">İKİSU</div>
         <p>Ağva ve Şile bölgesi satılık, kiralık ve yatırım portföyleri.</p>
-        <div><a href="#portfoy">Tüm ilanlar</a><a href="/admin">Admin paneli</a><a href="#top">Yukarı dön ↑</a></div>
+        <div><a href="#portfoy" onClick={tumIlanlariGoster}>Tüm ilanlar</a><a href="/admin">Admin paneli</a><a href="#top">Yukarı dön ↑</a></div>
       </footer>
 
       <div className="contact-dock" aria-label="Hızlı iletişim">

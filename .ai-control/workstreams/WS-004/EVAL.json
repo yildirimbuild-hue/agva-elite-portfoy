@@ -1,26 +1,29 @@
 {
   "schemaVersion": 1,
   "evalId": "EVAL-WS004-20260723",
-  "createdAt": "2026-07-23T15:11:33.091Z",
+  "createdAt": "2026-07-24T08:56:23.8802079+03:00",
   "actor": {
     "id": "AI-DEV-02",
     "role": "EXECUTOR"
   },
-  "subject": "İlan detay sayfası tarayıcıda kalıcı favori davranışı",
-  "intendedUse": "İKİSU Emlak ilan detayındaki anonim ziyaretçi deneyimini geliştirmek ve değişikliği bağımsız incelemeye hazırlamak.",
-  "realGoal": "Ziyaretçinin bir ilanı hesap açmadan aynı tarayıcıda güvenilir biçimde favoriye ekleyip çıkarabilmesi ve durumun yenilemede korunması.",
+  "subject": "İlan detayı ve katalogda uçtan uca tarayıcıda kalıcı favori davranışı",
+  "intendedUse": "İKİSU Emlak anonim ziyaretçisinin favoriyi kaydedip daha sonra katalogdan bulabilmesini sağlamak ve değişikliği bağımsız incelemeye hazırlamak.",
+  "realGoal": "Ziyaretçinin bir ilanı hesap açmadan detay veya katalogdan favoriye ekleyip çıkarabilmesi, görünür sayaca ulaşması ve yalnız halen yayındaki favorilerini tekrar açabilmesi.",
   "successCriteria": [
     "Favori düğmesi ekle ve çıkar durumunu metin, kalp simgesi ve aria-pressed ile görünür kılar.",
-    "İlk işlem ilan kimliğini tarayıcı deposuna ekler, ikinci işlem çıkarır.",
-    "Favori durumu sayfa yenilemesinden sonra aynı tarayıcıda korunur.",
+    "Detay ve katalogdaki ilk işlem ilan kimliğini tarayıcı deposuna ekler, ikinci işlem çıkarır.",
+    "Favori sayacı ve görünümü yalnız halen yayındaki kaydedilmiş ilanları gösterir.",
+    "Favori görünümü ilan detayına geçişi ve boş durumda tüm ilanlara dönüşü korur.",
+    "Favori durumu sayfa yenilemesinden ve aynı tarayıcıdaki sekmeler arası değişiklikten sonra korunur.",
     "Bozuk veya erişilemeyen depolama sayfayı kırmaz ve kullanıcıya hata geri bildirimi verir.",
-    "Masaüstü ve 390 piksel mobil düzende kontrol erişilebilir, taşmasız ve okunabilir kalır.",
+    "Katalog düğmeleri klavye odağı, aria-pressed ve aria-live geri bildirimi taşır.",
     "Mevcut özellik testleri, tip kontrolü, veri doğrulaması ve production build yeşil kalır."
   ],
   "riskLevel": "R3",
   "evalDepth": "DEEP",
   "missingData": [
     "Bağımsız reviewer sonucu henüz yok.",
+    "Kullanıcı katalogdaki ikon, buton ve ekleme işlemini kendi tarayıcısında kabul etti; sayaç/filtre ve mobil görünüm için otomatik tarayıcı turu Chrome bağlantısı başlatılamadığı için yok.",
     "Canlı kullanım analitiği ve gerçek kullanıcı geri bildirimi henüz yok.",
     "Firefox ve Safari üzerinde gerçek tarayıcı akışı çalıştırılmadı.",
     "Cihazlar arası senkronizasyon ürün kapsamına dahil edilmedi."
@@ -39,7 +42,7 @@
     {
       "id": "RED-3",
       "result": "PASS",
-      "rationale": "Önce kırmızı sonra yeşil hedefli test, gerçek Chromium akışı, production build ve genel kapı kanıtı mevcut."
+      "rationale": "Katalog revizyonu önce 3/5 kırmızı sonra 5/5 yeşil hedefli test, 32/32 regresyon, production build, yerel HTTP ve genel kapı kanıtı taşır; yeni tarayıcı kanıtı eksikliği saklanmaz."
     },
     {
       "id": "RED-4",
@@ -54,7 +57,7 @@
     {
       "id": "RED-6",
       "result": "PASS",
-      "rationale": "Kullanıcı ilk adımı ilan detayındaki açık Favorilere ekle düğmesiyle doğrudan uygulayabiliyor."
+      "rationale": "Kullanıcı ilk adımı detay veya katalogdaki açık favori düğmesiyle uygulayabiliyor; görünür Favorilerim sayacı kaydedilen ilanlara geri dönüş sağlıyor."
     },
     {
       "id": "RED-7",
@@ -85,12 +88,12 @@
   "evidence": [
     {
       "claimId": "CLAIM-WS004-RED-GREEN",
-      "statement": "Favori depolama ve erişilebilir UI sözleşmesi değişiklik öncesinde 0/3 kırmızı, uygulama sonrasında 3/3 yeşil oldu.",
+      "statement": "Katalog favori seçimi ve tam tüketici zinciri revizyon öncesinde 3/5 kırmızı, uygulama sonrasında 5/5 yeşil oldu.",
       "type": "DATA",
       "evidenceLevel": "K4",
       "sourceClass": "S3",
-      "source": "node --test tests/listing-favorites.test.mjs",
-      "freshness": "2026-07-23 aynı çalışma oturumu",
+      "source": "node --test TESTS/listing-favorites.test.mjs",
+      "freshness": "2026-07-24 aynı çalışma oturumu",
       "conflictingData": [],
       "missingData": [
         "Birim ve kaynak sözleşmesi testi tek başına tüm tarayıcı motorlarını kapsamaz."
@@ -100,27 +103,28 @@
     },
     {
       "claimId": "CLAIM-WS004-BROWSER",
-      "statement": "İzole Chromium akışında bozuk veri güvenle açıldı; ekle, yenilemede koru ve çıkar adımları geçti; çalışma zamanı hatası oluşmadı.",
+      "statement": "Önceki ilan detayı sürümü izole Chromium akışında bozuk veri, ekle, yenilemede koru ve çıkar adımlarını geçti; katalog revizyonunda Chrome bağlantısı başlatılamadı.",
       "type": "DATA",
       "evidenceLevel": "K4",
       "sourceClass": "S3",
       "source": "node C:\\tmp\\agva-favorites-e2e.mjs",
-      "freshness": "2026-07-23 aynı çalışma oturumu",
+      "freshness": "2026-07-23 detay kanıtı; 2026-07-24 katalog denemesi başarısız",
       "conflictingData": [],
       "missingData": [
+        "Yeni katalog sayacı, filtre görünümü ve mobil yerleşim gerçek tarayıcıda çalıştırılmadı.",
         "Firefox ve Safari motorları çalıştırılmadı."
       ],
-      "carriesMainDecision": true,
-      "decisionImpact": "Kullanıcının gerçek DOM ve localStorage zincirinde kabul kriterlerini gerçekleştirebildiğini doğrular."
+      "carriesMainDecision": false,
+      "decisionImpact": "Paylaşılan depolama sözleşmesinin detay yüzeyindeki gerçek davranışını destekler; yeni katalog yüzeyini tek başına kanıtlamaz."
     },
     {
       "claimId": "CLAIM-WS004-REGRESSION",
-      "statement": "Birleşik test paketi 30/30, TypeScript kontrolü, 24 kayıt veri doğrulaması, dağıtım kontrolü ve production build yeşil geçti.",
+      "statement": "Birleşik test paketi 32/32, TypeScript kontrolü, 24 kayıt veri doğrulaması, dağıtım kontrolü ve production build yeşil geçti.",
       "type": "DATA",
       "evidenceLevel": "K4",
       "sourceClass": "S3",
       "source": "node --test; npx.cmd --no-install tsc --noEmit --incremental false; npm.cmd run build",
-      "freshness": "2026-07-23 aynı çalışma oturumu",
+      "freshness": "2026-07-24 aynı çalışma oturumu",
       "conflictingData": [],
       "missingData": [
         "Test dışındaki bütün davranışların mutlak regresyonsuzluğunu kanıtlamaz."
@@ -135,7 +139,7 @@
       "evidenceLevel": "K4",
       "sourceClass": "S3",
       "source": "C:\\tmp\\dogrula-ws004.ps1 üzerinden C:\\Users\\zeero\\.claude\\dogrula.ps1 -tam",
-      "freshness": "2026-07-23 aynı çalışma oturumu",
+      "freshness": "2026-07-24 aynı çalışma oturumu",
       "conflictingData": [
         "İlk iki çalıştırma Windows Store Python yönlendiricisi nedeniyle kırmızıydı; gerçek kurulu Python yolu kullanılarak çevresel neden giderildi."
       ],
@@ -145,43 +149,78 @@
     },
     {
       "claimId": "CLAIM-WS004-VISUAL",
-      "statement": "Masaüstü ve 390 piksel mobil görsel incelemede düğme okunabilir; mobil belge genişliği 390 ve viewport genişliği 390 ölçüldü.",
+      "statement": "Önceki detay favorisi masaüstü ve 390 piksel mobil görsel incelemede okunabilir ve taşmasızdı; yeni katalog görünümü için güncel görsel kanıt üretilemedi.",
       "type": "DATA",
       "evidenceLevel": "K3",
       "sourceClass": "S3",
       "source": ".next/ws004-favorites-browser.png ve .next/ws004-favorites-browser-mobile.png",
-      "freshness": "2026-07-23 aynı çalışma oturumu",
+      "freshness": "2026-07-23 detay kanıtı",
       "conflictingData": [],
       "missingData": [
+        "Katalog revizyonunun masaüstü ve mobil ekran görüntüsü alınmadı.",
         "Farklı cihaz piksel oranları ve tarayıcı yazı tipi tercihleri incelenmedi."
       ],
       "carriesMainDecision": false,
-      "decisionImpact": "Temel görsel yerleşim ve taşma riskini azaltır."
+      "decisionImpact": "Yalnız önceki detay kontrolünün temel görsel yerleşim riskini azaltır."
+    },
+    {
+      "claimId": "CLAIM-WS004-HTTP",
+      "statement": "Derlenmiş yerel production sunucusunda ana sayfa HTTP 200 verdi; sağlık cevabı kataloğun okunabilir ve 22 ilanın yayınlanmış olduğunu doğruladı.",
+      "type": "DATA",
+      "evidenceLevel": "K3",
+      "sourceClass": "S3",
+      "source": "Next start -p 3211 ve yerel HTTP istekleri",
+      "freshness": "2026-07-24 aynı çalışma oturumu",
+      "conflictingData": [
+        "Sağlık rotası yerel ortamda eksik zorunlu üretim ayarları nedeniyle tasarlandığı gibi 503 configuration_required döndürdü."
+      ],
+      "missingData": [
+        "HTTP kontrolü istemci tarafı localStorage etkileşimini çalıştırmaz."
+      ],
+      "carriesMainDecision": false,
+      "decisionImpact": "Derlenmiş uygulamanın ana sayfayı ve katalog verisini yerel production modunda sunabildiğini destekler."
+    },
+    {
+      "claimId": "CLAIM-WS004-USER-ACCEPTANCE",
+      "statement": "Kullanıcı kendi tarayıcısında katalog favori ikonunu, butonu ve favoriye ekleme işlemini çalıştırıp sorun görmediğini bildirdi.",
+      "type": "DATA",
+      "evidenceLevel": "K2",
+      "sourceClass": "S1",
+      "source": "2026-07-24 kullanıcı kabul mesajı",
+      "freshness": "2026-07-24",
+      "conflictingData": [],
+      "missingData": [
+        "Sayaç, filtre, yenileme ve mobil görünüm adımları ayrı ayrı raporlanmadı."
+      ],
+      "carriesMainDecision": false,
+      "decisionImpact": "Temel katalog etkileşiminin kullanıcının gerçek tarayıcısında çalıştığını destekler; ana kararı otomatik testler taşır."
     }
   ],
   "breakpoints": [
     "Tarayıcı localStorage verisi kullanıcı tarafından temizlenirse favoriler kaybolur.",
     "Gizli mod veya tarayıcı politikası depolamayı engellerse favori kalıcı kaydedilemez; UI bunu bildirir.",
     "Aynı ilan veri katmanında farklı bir id ile yeniden oluşturulursa eski favori anahtarı eşleşmez.",
+    "Yayından kaldırılan ilan kimliği depoda kalabilir; kullanıcı sayacı ve görünümü bunu bilinçli olarak dışarıda bırakır.",
+    "Yeni katalog mobil yerleşimi otomatik tarayıcıda doğrulanana kadar uzun başlık ve sayaç kombinasyonunda görsel taşma riski kalır.",
     "Favoriler cihazlar veya tarayıcı profilleri arasında senkronize edilmez.",
     "Çok büyük ya da kötü biçimli depolama girdisi güvenlik için boş listeye düşürülür."
   ],
-  "counterJudgment": "Hesaba bağlı sunucu tarafı favoriler cihazlar arası deneyimi güçlendirirdi; ancak projede halka açık kullanıcı hesabı ve kimlik doğrulama zinciri yok. Bu yaklaşım yeni API, veri şeması ve kişisel veri kapsamı ekleyerek küçük isteği gereksiz büyütürdü. Ürün daha sonra kullanıcı hesabı edinirse yerel çözüm yeniden değerlendirilmelidir.",
+  "counterJudgment": "Hesaba bağlı sunucu tarafı favoriler cihazlar arası deneyimi, ayrı favoriler rotası da paylaşılabilir URL'yi güçlendirirdi; ancak projede halka açık kullanıcı hesabı ve kimlik doğrulama zinciri yok. Yeni API, veri şeması ve rota küçük anonim kullanım amacını gereksiz büyütürdü. Ürün daha sonra kullanıcı hesabı edinirse yerel çözüm yeniden değerlendirilmelidir.",
   "falseSuccess": {
-    "visibleSuccess": "Kalp simgesi tıklanınca görsel olarak doluyor.",
-    "realSuccess": "İlan kimliği doğru depolanıyor, yenilemede geri okunuyor, ikinci işlemde kaldırılıyor ve hata yolu sayfayı kırmıyor.",
-    "risk": "Yalnız React state değişip localStorage yazımı başarısız olabilir veya bozuk veri sayfayı kırabilir.",
-    "verificationMetric": "İzole tarayıcıda ekle, yenilemede koru, çıkar ve bozuk veri senaryolarının tamamının geçmesi.",
-    "misleadingMetric": "Yalnız düğmenin DOM'da bulunması veya kalp simgesinin renk değiştirmesi.",
-    "earlyWarning": "Yenileme sonrasında aria-pressed değerinin false dönmesi ya da localStorage içeriğinin ilan id'sini taşımaması.",
+    "visibleSuccess": "Kalp simgesi tıklanınca doluyor ve sayaç artıyor.",
+    "realSuccess": "İlan kimliği doğru depolanıyor, yenilemede geri okunuyor, Favorilerim görünümünde bulunup detaya açılabiliyor, ikinci işlemde kaldırılıyor ve hata yolu sayfayı kırmıyor.",
+    "risk": "Yalnız React state ve sayaç değişip localStorage, yeniden açma veya boş durum tüketici zinciri kırık kalabilir.",
+    "verificationMetric": "Ekle, sayaçtan aç, yalnız favorileri göster, detaya geç, yenilemede koru, çıkar ve boş durum adımlarının tamamının geçmesi.",
+    "misleadingMetric": "Yalnız düğmenin DOM'da bulunması, kalp simgesinin renk değiştirmesi veya sayaç metni.",
+    "earlyWarning": "Favorilerim sayacıyla görünüm sayısının ayrışması, yenilemede aria-pressed değerinin false dönmesi veya kaydedilen ilanın listede bulunmaması.",
     "revisionThreshold": "Kabul akışındaki herhangi bir adımın başarısız olması veya ilk gerçek kullanıcıda kalıcılık kaybı raporlanması."
   },
   "decisionEconomics": {
     "wrongDecisionCost": "Çalışmayan favori kontrolü kullanıcı güvenini ve geri dönüş niyetini azaltır.",
     "delayCost": "Özelliğin gecikmesi düşük-orta; temel ilan ve iletişim akışları çalışmaya devam eder.",
     "noDecisionCost": "Mevcut sahte favori simgesi işlevsiz kalır ve beklenti ihlali sürer.",
-    "testCost": "Üç hedefli test ve izole Chromium akışı düşük maliyetlidir.",
-    "implementationCost": "Bir küçük depolama yardımcısı, bir CSS modülü ve tek bileşen entegrasyonu.",
+    "testCost": "Beş hedefli test, birleşik regresyon, build ve tarayıcı turu düşük-orta maliyetlidir.",
+    "implementationCost": "Bir küçük depolama yardımcısı, iki tüketici bileşeni ve hedefli stiller.",
     "monitoringCost": "İlk canlı geri bildirim ve isteğe bağlı favori etkileşim metriğiyle sınırlıdır.",
     "rollbackCost": "ListingDetail eklerinin ve üç yeni dosyanın geri alınmasıyla düşüktür.",
     "cheapestValidation": "Önce kırmızı/yeşil birim testi, ardından tek ilan üzerinde ekle-yenile-çıkar tarayıcı akışı.",

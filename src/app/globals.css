@@ -1484,6 +1484,9 @@ img {
 
 .catalog-nav button:hover,
 .catalog-nav a:hover { color: var(--brass); }
+.catalog-nav button.active { color: var(--brass); }
+.catalog-nav button:focus-visible,
+.catalog-nav a:focus-visible { outline: 2px solid var(--brass); outline-offset: 5px; }
 
 .catalog-nav .admin-nav-link {
   padding: 13px 18px;
@@ -1679,7 +1682,7 @@ img {
   border-bottom: 1px solid var(--line);
 }
 
-.quick-tabs { display: flex; gap: 6px; margin-right: auto; }
+.quick-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-right: auto; }
 .quick-tabs button {
   padding: 11px 18px;
   border: 1px solid transparent;
@@ -1691,6 +1694,7 @@ img {
   cursor: pointer;
 }
 .quick-tabs button.active { color: white; background: var(--forest); }
+.quick-tabs button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
 
 .catalog-toolbar > select {
   min-width: 140px;
@@ -1722,7 +1726,11 @@ img {
 .property-badges span:nth-child(2) { color: var(--forest); background: var(--brass); }
 .property-badges span:last-child:not(:first-child) { background: rgba(141, 94, 47, 0.86); }
 
-.favorite { position: absolute; top: 12px; right: 12px; z-index: 5; width: 34px; height: 34px; color: var(--forest); border: 0; border-radius: 50%; background: rgba(255,255,255,.9); font-size: 20px; cursor: pointer; }
+.favorite { position: absolute; top: 12px; right: 12px; z-index: 5; width: 38px; height: 38px; color: var(--forest); border: 1px solid rgba(18,57,43,.16); border-radius: 50%; background: rgba(255,255,255,.94); font-size: 21px; line-height: 1; cursor: pointer; transition: color .2s ease, background .2s ease, transform .2s ease; }
+.favorite:hover { transform: scale(1.06); }
+.favorite.active { color: white; border-color: var(--forest); background: var(--forest); }
+.favorite:focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; }
+.favorite:disabled { opacity: .55; cursor: wait; transform: none; }
 
 .property-content { padding-top: 19px; flex: 1; display: flex; flex-direction: column; }
 .property-meta { display: flex; justify-content: space-between; color: #7a827f; font-size: 9px; letter-spacing: .15em; text-transform: uppercase; }
@@ -1735,8 +1743,10 @@ img {
 .property-price span { color: #7b837f; font-size: 9px; }
 
 .load-more { margin: 70px auto 0; padding: 17px 28px; display: block; color: white; border: 0; background: var(--forest); font-size: 9px; letter-spacing: .15em; text-transform: uppercase; cursor: pointer; }
+.favorite-feedback { min-height: 20px; margin-top: 12px; color: #59635f; font-size: 11px; }
 .empty-results { margin-top: 40px; padding: 80px 20px; text-align: center; border: 1px solid var(--line); }
 .empty-results h3 { font: 400 34px var(--serif); }
+.empty-results p { max-width: 520px; margin: 12px auto 24px; color: #68716e; line-height: 1.65; }
 .empty-results button { padding: 12px 20px; color: white; border: 0; background: var(--forest); cursor: pointer; }
 
 .catalog-cta {
